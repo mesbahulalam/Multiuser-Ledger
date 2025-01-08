@@ -265,11 +265,80 @@
             </div>
         </form>
     </div>
-
     <!-- Salary Records Table -->
-    <div class="bg-white p-6 rounded-lg shadow">
+    <div class="bg-white p-6 rounded-lg shadow" x-data="{
+        records: [],
+        currentPage: 1,
+        itemsPerPage: 10,
+        totalPages: 1,
+        loading: true,
+        error: null,
+        searchQuery: '',
+
+        async loadRecords() {
+            this.loading = true;
+            this.error = null;
+            try {
+                const response = await fetch('/api/salary/summary');
+                if (!response.ok) throw new Error('Failed to load data');
+                const data = await response.json();
+                this.records = Array.isArray(data) ? data : [];
+                this.totalPages = Math.ceil(this.filteredRecords.length / this.itemsPerPage);
+            } catch (error) {
+                console.error('Error loading records:', error);
+                this.error = error.message;
+                this.records = [];
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        get filteredRecords() {
+            if (!Array.isArray(this.records)) return [];
+            return this.records.filter(record => 
+                record.username.toLowerCase().includes(this.searchQuery.toLowerCase())
+            );
+        },
+
+        get paginatedRecords() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            return this.filteredRecords.slice(start, end);
+        },
+
+        nextPage() {
+            if (this.currentPage < this.totalPages) {
+                this.currentPage++;
+            }
+        },
+
+        prevPage() {
+            if (this.currentPage > 1) {
+                this.currentPage--;
+            }
+        }
+    }" x-init="loadRecords()">
         <h2 class="text-xl font-bold mb-4">Salary Summary</h2>
-        <div class="overflow-x-auto">
+        
+        <!-- Error Message -->
+        <div x-show="error" class="text-red-600 mb-4 p-2 bg-red-50 rounded" x-text="error"></div>
+
+        <!-- Loading spinner -->
+        <div x-show="loading" class="text-center py-4">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+
+        <div x-show="!loading && !error" class="overflow-x-auto">
+            <!-- Search box -->
+            <div class="mb-4">
+                <input 
+                    type="text" 
+                    placeholder="Search by employee name..." 
+                    x-model="searchQuery"
+                    class="w-full p-2 border rounded"
+                >
+            </div>
+
             <table class="min-w-full">
                 <thead class="bg-gray-50">
                     <tr>
@@ -283,84 +352,56 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    <?php
-                    try {
-                        $db = DB::getInstance();
-                        $query = "
-                            WITH LastSalary AS (
-                                SELECT 
-                                    user_id,
-                                    net_salary,
-                                    ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY date_created DESC) as rn
-                                FROM salaries
-                            ),
-                            AccumulatedSalary AS (
-                                SELECT 
-                                    user_id,
-                                    SUM(net_salary) as total_salary
-                                FROM salaries
-                                GROUP BY user_id
-                            ),
-                            PaidAmount AS (
-                                SELECT 
-                                    expense_by as user_id,
-                                    SUM(amount) as paid_amount
-                                FROM expenses 
-                                WHERE purpose LIKE '%salary%'
-                                AND status = 'approved'
-                                GROUP BY expense_by
-                            )
-                            SELECT 
-                                u.user_id,
-                                u.username,
-                                COALESCE(ls.net_salary, 0) as latest_salary,
-                                COALESCE(acs.total_salary, 0) as accumulated_salary,
-                                COALESCE(pa.paid_amount, 0) as paid_amount,
-                                COALESCE(acs.total_salary, 0) - COALESCE(pa.paid_amount, 0) as payable_amount
-                            FROM users u
-                            LEFT JOIN LastSalary ls ON u.user_id = ls.user_id AND ls.rn = 1
-                            LEFT JOIN AccumulatedSalary acs ON u.user_id = acs.user_id
-                            LEFT JOIN PaidAmount pa ON u.user_id = pa.user_id
-                            WHERE u.is_active = 1
-                            ORDER BY u.username";
-                        
-                        $records = $db->query($query)->fetchAll(PDO::FETCH_ASSOC);
-                        
-                        if (empty($records)) {
-                            echo '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No salary records found</td></tr>';
-                        } else {
-                            foreach ($records as $record):
-                                if($record['latest_salary'] > 0): ?>
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap"><?= htmlspecialchars($record['user_id']) ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap"><?= htmlspecialchars($record['username']) ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap">$<?= number_format($record['latest_salary'], 2) ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap">$<?= number_format($record['accumulated_salary'], 2) ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap">$<?= number_format($record['paid_amount'], 2) ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap <?= $record['payable_amount'] > 0 ? 'text-red-600 font-medium' : '' ?>">
-                                            $<?= number_format($record['payable_amount'], 2) ?>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <button 
-                                                class="text-blue-600 hover:text-blue-900"
-                                                @click="$dispatch('open-salary-details', { 
-                                                    user_id: <?= $record['user_id'] ?>,
-                                                    username: '<?= htmlspecialchars($record['username']) ?>'
-                                                })">
-                                                View History
-                                            </button>
-                                        </td>
-                                    </tr>
-                                <?php
-                                endif;
-                            endforeach;
-                        }
-                    } catch (Exception $e) {
-                        echo '<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error: ' . htmlspecialchars($e->getMessage()) . '</td></tr>';
-                    }
-                    ?>
+                    <template x-if="filteredRecords.length === 0">
+                        <tr>
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">No salary records found</td>
+                        </tr>
+                    </template>
+                    <template x-for="record in paginatedRecords" :key="record.user_id">
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap" x-text="record.user_id"></td>
+                            <td class="px-6 py-4 whitespace-nowrap" x-text="record.username"></td>
+                            <td class="px-6 py-4 whitespace-nowrap" x-text="'$' + Number(record.latest_salary).toFixed(2)"></td>
+                            <td class="px-6 py-4 whitespace-nowrap" x-text="'$' + Number(record.accumulated_salary).toFixed(2)"></td>
+                            <td class="px-6 py-4 whitespace-nowrap" x-text="'$' + Number(record.paid_amount).toFixed(2)"></td>
+                            <td class="px-6 py-4 whitespace-nowrap" 
+                                :class="record.payable_amount > 0 ? 'text-red-600 font-medium' : ''"
+                                x-text="'$' + Number(record.payable_amount).toFixed(2)"></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button 
+                                    class="text-blue-600 hover:text-blue-900"
+                                    @click="$dispatch('open-salary-details', { 
+                                        user_id: record.user_id,
+                                        username: record.username
+                                    })">
+                                    View History
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
                 </tbody>
             </table>
+
+            <!-- Pagination Controls -->
+            <div class="mt-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <button 
+                        class="px-3 py-1 border rounded hover:bg-gray-100"
+                        @click="prevPage"
+                        :disabled="currentPage === 1">
+                        Previous
+                    </button>
+                    <span class="text-sm text-gray-700">
+                        Page <span x-text="currentPage"></span> of <span x-text="totalPages"></span>
+                    </span>
+                    <button 
+                        class="px-3 py-1 border rounded hover:bg-gray-100"
+                        @click="nextPage"
+                        :disabled="currentPage === totalPages">
+                        Next
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

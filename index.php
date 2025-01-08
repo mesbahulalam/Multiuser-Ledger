@@ -624,6 +624,60 @@ $router->mount('/api', function () use ($router) {
                 echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
             }
         });
+
+
+        $router->get('/summary', function() {
+            try {                
+                $query = "
+                WITH LastSalary AS (
+                    SELECT 
+                        user_id,
+                        net_salary,
+                        ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY date_created DESC) as rn
+                    FROM salaries
+                ),
+                AccumulatedSalary AS (
+                    SELECT 
+                        user_id,
+                        SUM(net_salary) as total_salary
+                    FROM salaries
+                    GROUP BY user_id
+                ),
+                PaidAmount AS (
+                    SELECT 
+                        expense_by as user_id,
+                        SUM(amount) as paid_amount
+                    FROM expenses 
+                    WHERE purpose LIKE '%salary%'
+                    AND status = 'approved'
+                    GROUP BY expense_by
+                )
+                SELECT 
+                    u.user_id,
+                    u.username,
+                    COALESCE(ls.net_salary, 0) as latest_salary,
+                    COALESCE(acs.total_salary, 0) as accumulated_salary,
+                    COALESCE(pa.paid_amount, 0) as paid_amount,
+                    COALESCE(acs.total_salary, 0) - COALESCE(pa.paid_amount, 0) as payable_amount
+                FROM users u
+                LEFT JOIN LastSalary ls ON u.user_id = ls.user_id AND ls.rn = 1
+                LEFT JOIN AccumulatedSalary acs ON u.user_id = acs.user_id
+                LEFT JOIN PaidAmount pa ON u.user_id = pa.user_id
+                WHERE u.is_active = 1 AND COALESCE(ls.net_salary, 0) != 0
+                ORDER BY u.username
+                ";
+
+                $results = DB::fetchAll($query);
+
+                header('Content-Type: application/json');
+                echo json_encode($results);
+                
+            } catch (PDOException $e) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+            }
+        });
+
     });
         
     $router->get('/chart', function () {
