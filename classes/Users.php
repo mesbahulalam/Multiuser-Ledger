@@ -34,7 +34,7 @@ class Users {
     
     public static function createUser($username, $email, $password, $role_name = null) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        $roleId = $role_name ? self::getRoleId($role_name) : self::getRoleId('User');
+        $roleId = self::getRoleId($role_name ? $role_name : 'User');
         $sql = "INSERT INTO users (username, email, password, password_hash, role_id) VALUES (?, ?, ?, ?, ?)";
         if (DB::query($sql, [$username, $email, $password, $hashedPassword, $roleId])) {
             $userId = DB::fetchOne("SELECT LAST_INSERT_ID() as id")['id'];
@@ -44,20 +44,20 @@ class Users {
     }
     
     public static function getUserById($userId) {
-        return DB::fetchOne("SELECT user_id, username, email, role_id, is_active FROM users WHERE user_id = ?", [$userId]);
+        return DB::fetchOne("SELECT user_id, username, first_name, last_name, phone_number, email, profile_picture, dob, salary, role_id, is_active FROM users WHERE user_id = ?", [$userId]);
     }
     
     public static function updateUser($userId, $data) {
-        $allowedFields = ['username', 'email', 'role_id', 'is_active'];
-        $data['role_id'] = $data['role_name'] ? self::getRoleId($data['role_name']) : self::getRoleId('User');
+        $allowedFields = ['username', 'first_name', 'last_name', 'phone_number', 'email', 'profile_picture', 'dob', 'salary', 'role_id', 'is_active', 'address'];
+        $data['role_id'] = self::getRoleId($data['role_name'] ? $data['role_name'] : 'User');
 
         $updates = [];
         $params = [];
         
         foreach ($data as $field => $value) {
-            if (in_array($field, $allowedFields)) {
+            if (in_array($field, $allowedFields) && $value !== '') {
                 $updates[] = "$field = ?";
-                $params[] = $value;
+                $params[] = $value; 
             }
         }
         
@@ -186,6 +186,23 @@ class Users {
         return false;
     }
 
+    public static function loginAs($user_id){
+        $user = DB::fetchOne(
+            "SELECT user_id, username, password_hash, is_active FROM users WHERE user_id = ?", 
+            [$user_id]
+        );
+        
+        if (!$user || !$user['is_active']) {
+            return false;
+        }
+        
+        // Set session variables
+        $_SESSION['user_id'] = $user['user_id'];
+        $_SESSION['username'] = $user['username'];
+
+        return true;
+    }
+    
     public static function validateCookieAuth() {
         if (!isset($_COOKIE['user_id']) || !isset($_COOKIE['auth_hash'])) {
             return false;
@@ -208,7 +225,7 @@ class Users {
     }
 
     public static function isLoggedIn() {
-        return resolve($_SESSION['user_id'], $_COOKIE['user_id']) || self::validateCookieAuth();
+        return $_SESSION['user_id'] || self::validateCookieAuth();
     }
 
     public static function logout() {

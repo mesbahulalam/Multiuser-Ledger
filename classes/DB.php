@@ -6,6 +6,7 @@ class DB {
     private static $username = 'root';
     private static $password = '';
     private static $connection = null;
+    private static $affectedRows = 0;
 
     public static function getInstance() {
         if (self::$connection === null) {
@@ -46,6 +47,14 @@ class DB {
     public static function fetchColumn($sql, $params = []) {
         $stmt = self::query($sql, $params);
         return $stmt ? $stmt->fetchColumn() : false;
+    }
+
+    public static function getLastInsertId() {
+        return self::getInstance()->lastInsertId();
+    }
+
+    public static function affectedRows() {
+        return self::$affectedRows;
     }
 
     public static function getLastError() {

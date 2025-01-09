@@ -3,6 +3,7 @@ require_once 'classes/DB.php';
 require_once 'classes/Router.php';
 require_once 'classes/Users.php';
 require_once 'classes/FinanceManager.php';
+require_once 'classes/Attachments.php';
 
 define('DEFAULT_DATA_ORDER', 'DESC');
 
@@ -56,16 +57,34 @@ $router->both('/login', function () {
     require_once('views/login.php');
 });
 
+$router->get('/login-as', function () {
+    if (!Users::hasPermission($_SESSION['user_id'], 'DELETE')) {
+        http_response_code(403);
+        echo 'Permission denied';
+        return;
+    }
+
+    $userId = $_GET['user_id'];
+    if (!$userId) {
+        http_response_code(400);
+        echo 'User ID is required';
+        return;
+    }
+
+    Users::loginAs($userId);
+    header('Location: /dashboard');
+});
 
 $router->mount('/api', function () use ($router) {
+
     $router->get('/', function () {
         echo 'Welcome to the API';
     });
-    
+
     $router->mount('/users', function () use ($router) {
 
         $router->get('/', function () use ($app) {
-            if (!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'READ')) {
+            if (!Users::hasPermission($_SESSION['user_id'], 'READ')) {
                 http_response_code(403);
                 echo json_encode(['error' => 'Permission denied']);
                 return;
@@ -76,8 +95,34 @@ $router->mount('/api', function () use ($router) {
             echo json_encode($users);
         });
     
-        $router->get('/namelist', function () use ($app) {
-            if (!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'READ')) {
+        $router->get('/namelist', function() {
+            if (!Users::hasPermission($_SESSION['user_id'], 'READ')) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Permission denied']);
+                return;
+            }
+
+            $users = DB::fetchAll("
+                SELECT user_id, username, salary 
+                FROM users 
+                WHERE is_active = TRUE 
+                ORDER BY username
+            ");
+
+            $formatted = array_map(function($user) {
+                return [
+                    'id' => $user['user_id'],
+                    'text' => $user['username'],
+                    'salary' => $user['salary']
+                ];
+            }, $users);
+
+            header('Content-Type: application/json');
+            echo json_encode($formatted);
+        });
+
+        $router->get('/namelist1', function () use ($app) {
+            if (!Users::hasPermission($_SESSION['user_id'], 'READ')) {
                 http_response_code(403);
                 echo json_encode(['error' => 'Permission denied']);
                 return;
@@ -92,7 +137,7 @@ $router->mount('/api', function () use ($router) {
         });
     
         $router->post('/new', function () use ($app) {
-            if (!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'CREATE')) {
+            if (!Users::hasPermission($_SESSION['user_id'], 'CREATE')) {
                 http_response_code(403);
                 echo json_encode(['error' => 'Permission denied']);
                 return;
@@ -123,7 +168,7 @@ $router->mount('/api', function () use ($router) {
         $router->post('/delete', function () use ($app) {
             $data = json_decode(file_get_contents('php://input'), true);
     
-            if (!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'DELETE')) {
+            if (!Users::hasPermission($_SESSION['user_id'], 'DELETE')) {
                 http_response_code(403);
                 echo json_encode(['error' => 'Permission denied']);
                 return;
@@ -142,7 +187,7 @@ $router->mount('/api', function () use ($router) {
         $router->post('/disable', function () use ($app) {
             $data = json_decode(file_get_contents('php://input'), true);
             
-            if (!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'UPDATE')) {
+            if (!Users::hasPermission($_SESSION['user_id'], 'UPDATE')) {
                 http_response_code(403);
                 echo json_encode(['error' => 'Permission denied']);
                 return;
@@ -158,37 +203,166 @@ $router->mount('/api', function () use ($router) {
             }
         });
     
-        $router->post('/update', function () use ($app) {
-            $data = json_decode(file_get_contents('php://input'), true);
-            
-            if (!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'UPDATE')) {
+        $router->post('/update', function () use ($router) {
+            if (!Users::hasPermission($_SESSION['user_id'], 'UPDATE') && $_SESSION['user_id'] !== $_POST['user_id']) {
                 http_response_code(403);
                 echo json_encode(['error' => 'Permission denied']);
                 return;
             }
-    
-            $updated = Users::updateUser($data['id'], [
-                'username' => $data['username'],
-                'email' => $data['email'],
-                'role_name' => $data['role_name']
+
+            $userId = $_POST['user_id'];
+            if (!$userId) {
+                http_response_code(400);
+                echo json_encode(['error' => 'User ID is required']);
+                return;
+            }
+
+            $updateData = array_filter([
+                'username' => $_POST['username'] ?? null,
+                'email' => $_POST['email'] ?? null,
+                'first_name' => $_POST['first_name'] ?? null,
+                'last_name' => $_POST['last_name'] ?? null,
+                'dob' => $_POST['dob'] ?? null,
+                'phone_number' => $_POST['phone_number'] ?? null,
+                'role_name' => $_POST['role_name'] ?? null,
+                'salary' => $_POST['salary'] ?? null
             ]);
-    
+
+            if(Users::hasPermission($userId, 'UPDATE')) {
+                // role. salary and permissions can only be updated by super admin
+                unset($updateData['username']);
+                unset($updateData['role_name']);
+                unset($updateData['salary']);
+            }
+
             header('Content-Type: application/json');
-            if ($updated) {
-                echo json_encode(['success' => true, 'message' => 'User updated successfully']);
+            if (Users::updateUser($userId, $updateData)) {
+                echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
             } else {
                 http_response_code(500);
-                echo json_encode(['error' => 'Failed to update user']);
+                echo json_encode(['error' => 'Failed to update profile']);
+            }
+        });
+
+        $router->post('/profile-picture', function () use ($router) {
+            if (!Users::hasPermission($_SESSION['user_id'], 'UPDATE')) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Permission denied']);
+                return;
+            }
+
+            if (!isset($_FILES['profile_picture'])) {
+                http_response_code(400);
+                echo json_encode(['error' => 'No file uploaded']);
+                return;
+            }
+
+            $userId = $_POST['user_id'];
+            if (!$userId) {
+                http_response_code(400);
+                echo json_encode(['error' => 'User ID is required']);
+                return;
+            }
+
+            try {
+                $attachments = new Attachments();
+                $attachmentId = $attachments->uploadFile($_FILES['profile_picture']);
+                $attachmentUrl = $attachments->getAttachmentUrl($attachmentId);
+
+                if (Users::updateUser($userId, ['profile_picture' => $attachmentId])) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Profile picture updated successfully',
+                        'url' => $attachmentUrl
+                    ]);
+                } else {
+                    throw new Exception('Failed to update profile picture');
+                }
+            } catch (Exception $e) {
+                http_response_code(500);
+                echo json_encode(['error' => $e->getMessage()]);
+            }
+        });
+
+        $router->get('/id-card', function () {
+            if (!isset($_GET['user_id'])) {
+                http_response_code(400);
+                echo json_encode(['error' => 'User ID is required']);
+                return;
+            }
+
+            $userId = $_GET['user_id'] ?? $_SESSION['user_id'];
+            $userMeta = DB::fetchOne(
+                "SELECT meta_value FROM user_metadata WHERE user_id = ? AND meta_key = 'id_card'",
+                [$userId]
+            );
+
+            if ($userMeta) {
+                $attachments = new Attachments();
+                $url = $attachments->getAttachmentUrl($userMeta['meta_value']);
+                echo json_encode(['success' => true, 'url' => $url]);
+            } else {
+                echo json_encode(['success' => true, 'url' => null]);
+            }
+        });
+
+        $router->post('/id-card', function () {
+            if (!Users::hasPermission($_SESSION['user_id'], 'UPDATE')) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Permission denied']);
+                return;
+            }
+
+            if (!isset($_FILES['id_card'])) {
+                http_response_code(400);
+                echo json_encode(['error' => 'No file uploaded']);
+                return;
+            }
+
+            $userId = $_POST['user_id'];
+            if (!$userId) {
+                http_response_code(400);
+                echo json_encode(['error' => 'User ID is required']);
+                return;
+            }
+
+            try {
+                $attachments = new Attachments();
+                $attachmentId = $attachments->uploadFile($_FILES['id_card']);
+
+                // First, try to update existing record
+                $updated = DB::query(
+                    "UPDATE user_metadata SET meta_value = ? WHERE user_id = ? AND meta_key = 'id_card'",
+                    [$attachmentId, $userId]
+                );
+
+                // If no record was updated, insert new one
+                if (!$updated || DB::affectedRows() === 0) {
+                    DB::query(
+                        "INSERT INTO user_metadata (user_id, meta_key, meta_value) VALUES (?, 'id_card', ?)",
+                        [$userId, $attachmentId]
+                    );
+                }
+
+                $attachmentUrl = $attachments->getAttachmentUrl($attachmentId);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'ID card uploaded successfully',
+                    'url' => $attachmentUrl
+                ]);
+            } catch (Exception $e) {
+                http_response_code(500);
+                echo json_encode(['error' => $e->getMessage()]);
             }
         });
     
     });
-    
+
     $router->mount('/roles', function () use ($router) {
 
         $router->post('/', function () {
             // Check for UPDATE permission
-            if (!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'UPDATE')) {
+            if (!Users::hasPermission($_SESSION['user_id'], 'UPDATE')) {
                 http_response_code(403);
                 echo json_encode(['error' => 'Permission denied']);
                 return;
@@ -241,7 +415,7 @@ $router->mount('/api', function () use ($router) {
     
         $router->post('/new', function () {
             // Check for CREATE permission
-            if (!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'CREATE')) {
+            if (!Users::hasPermission($_SESSION['user_id'], 'CREATE')) {
                 http_response_code(403);
                 echo json_encode(['error' => 'Permission denied']);
                 return;
@@ -268,7 +442,7 @@ $router->mount('/api', function () use ($router) {
         });
     
     });
-    
+
     $router->mount('/finance', function () use ($router) {
         
         $router->get('/suggestions/{table}/{col}', function ($table, $col) use ($app) {
@@ -522,8 +696,9 @@ $router->mount('/api', function () use ($router) {
     });
 
     $router->mount('/salary', function () use ($router) {
+
         $router->post('/add', function () {
-            if (!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'CREATE')) {
+            if (!Users::hasPermission($_SESSION['user_id'], 'CREATE')) {
             http_response_code(403);
             echo json_encode(['error' => 'Permission denied']);
             return;
@@ -584,7 +759,7 @@ $router->mount('/api', function () use ($router) {
         });
 
         $router->get('/history/{id}', function($id) {
-            if (!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'READ')) {
+            if (!Users::hasPermission($_SESSION['user_id'], 'READ')) {
                 http_response_code(403);
                 echo json_encode(['error' => 'Permission denied']);
                 return;
@@ -624,7 +799,6 @@ $router->mount('/api', function () use ($router) {
                 echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
             }
         });
-
 
         $router->get('/summary', function() {
             try {                
@@ -679,7 +853,7 @@ $router->mount('/api', function () use ($router) {
         });
 
     });
-        
+
     $router->get('/chart', function () {
         $today = date('Y-m-d');
         $startOfWeek = date('Y-m-d', strtotime('monday this week'));
@@ -768,6 +942,7 @@ $router->mount('/api', function () use ($router) {
             ]
         ]);
     });
+
 });
 
 $router->both('/test', function () {

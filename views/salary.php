@@ -137,7 +137,8 @@
                         label: 'Select Employee'
                     })" 
                     x-init="loadItems()"
-                    class="relative" x-ref="userAutocomplete">
+                    class="relative" x-ref="userAutocomplete"
+                    @user-selected="$dispatch('update-salary', { salary: $event.detail.salary })">
                         <!-- Hidden input to store the selected user ID -->
                         <input type="hidden" name="user_id" :value="selected ? selected.id : ''">
                         
@@ -168,7 +169,11 @@
                             <ul class="max-h-60 overflow-y-auto">
                                 <template x-for="(item, index) in filteredItems" :key="item.id">
                                     <li
-                                        @click="selected = item; open = false"
+                                        @click="
+                                            selected = item; 
+                                            open = false; 
+                                            $dispatch('user-selected', { salary: item.salary });
+                                        "
                                         :class="{'bg-blue-50': selectedIndex === index}"
                                         class="p-2 cursor-pointer hover:bg-gray-100">
                                         <span x-text="item.text"></span>
@@ -199,6 +204,7 @@
                         step="0.01" 
                         name="basic_salary" 
                         x-model="basicSalary"
+                        @update-salary.window="basicSalary = $event.detail.salary || 0"
                         placeholder="Enter basic salary" 
                         required
                         class="w-full p-2 border rounded">
@@ -544,5 +550,4 @@
             </div>
         </div>
     </div>
-</div>
 </div>

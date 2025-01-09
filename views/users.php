@@ -50,7 +50,7 @@
                                 }
                             },
                             async createUser() {
-                                <?php if(!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'DELETE')): ?>
+                                <?php if(!Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
                                     alert('Permission denied');
                                 <?php else: ?>
                                 try {
@@ -116,7 +116,7 @@
                                 }
                             },
                             async deleteItem(id) {
-                            <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'DELETE')): ?>
+                            <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
                                 if (confirm('Are you sure you want to delete this item?')) {
                                     try {
                                         this.showLoading();
@@ -147,7 +147,7 @@
                             <?php endif; ?>
                             },
                             async bulkDelete() {
-                            <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'DELETE')): ?>
+                            <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
                                 if (confirm(`Are you sure you want to delete ${this.selectedRows.length} selected items?`)) {
                                     try {
                                         this.showLoading();
@@ -403,6 +403,11 @@
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                                     </svg>
                                                 </button>
+                                                <button @click="window.location.href = `/dashboard?activeSection=user-profile&user_id=${item.id}`" class="text-yellow-500 hover:text-yellow-700">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 19.121A1.5 1.5 0 016.5 18H17.5a1.5 1.5 0 011.379 1.121l1.5 6A1.5 1.5 0 0118.5 27H5.5a1.5 1.5 0 01-1.379-1.879l1.5-6zM12 3a4 4 0 110 8 4 4 0 010-8z" />
+                                                    </svg>
+                                                </button>
                                                 <template x-if="item.username !== 'admin'">
                                                     <button @click="deleteItem(item.id)" class="text-red-500 hover:text-red-700">
                                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -410,6 +415,15 @@
                                                         </svg>
                                                     </button>
                                                 </template>
+                                                <!-- login as button -->
+                                                <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
+                                                <button @click="window.location.href = `/login-as?user_id=${item.id}`" class="text-green hover:text-green-700">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                                                    </svg>
+                                                </button>
+                                                <?php endif; ?>
                                             </div>
                                         </td>
                                     </tr>

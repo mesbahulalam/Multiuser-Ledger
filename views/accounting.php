@@ -1,6 +1,6 @@
 <h1 class="text-3xl font-bold mb-8">Accounting</h1>
         
-        <?php if(!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'WRITE')): ?>
+        <?php if(!Users::hasPermission($_SESSION['user_id'], 'WRITE')): ?>
     
         <!-- Forms Row -->
         <div class="grid md:grid-cols-2 gap-6 mb-8">
@@ -249,7 +249,7 @@
                         const formData = new FormData(this.$el);
                         const data = Object.fromEntries(formData);
                         
-                        <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'APPROVE')): ?>
+                        <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
                         // Add the selected user's id if available
                         if (this.$refs.userAutocomplete && this.$refs.userAutocomplete.__x.$data.selected) {
                             data.expense_by = this.$refs.userAutocomplete.__x.$data.selected.id;
@@ -297,7 +297,7 @@
                         <input type="text" readonly value="<?= FinanceManager::getNextExpenseId() ?>" 
                             class="w-full p-2 border rounded bg-gray-100" placeholder="ID">
                         <!-- User Autocomplete -->
-                        <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'APPROVE')): ?>
+                        <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
                             <!-- User Autocomplete - only shown to users with APPROVE permission -->
                             <div x-data="autocomplete({
                                 apiUrl: '/api/users/namelist',

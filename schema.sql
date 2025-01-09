@@ -31,14 +31,44 @@ CREATE TABLE role_permissions (
 CREATE TABLE users (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) NOT NULL UNIQUE,
+    first_name VARCHAR(50), --
+    last_name VARCHAR(50), --
+    phone_number VARCHAR(20), --
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    profile_picture TEXT, --
+    dob DATE, --
+    salary DECIMAL(10,2), --
     role_id INT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE SET NULL
+);
+
+-- User metadata table
+CREATE TABLE user_metadata (
+    metadata_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    meta_key VARCHAR(50) NOT NULL,
+    meta_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE KEY user_meta_key (user_id, meta_key)
+);
+
+
+-- attachments
+CREATE TABLE attachments (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    entry_by INT,
+    attachment_name VARCHAR(255) NOT NULL,
+    attachment_path VARCHAR(255) NOT NULL,
+    attachment_type VARCHAR(50) NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (entry_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
 -- Logs table
@@ -52,16 +82,6 @@ CREATE TABLE activity_logs (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
--- attachments
-CREATE TABLE attachments (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    entry_by INT,
-    attachment_name VARCHAR(255) NOT NULL,
-    attachment_path VARCHAR(255) NOT NULL,
-    attachment_type VARCHAR(50) NOT NULL,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (entry_by) REFERENCES users(user_id) ON DELETE SET NULL
-);
 
 -- Incomes table
 CREATE TABLE incomes (
@@ -112,18 +132,36 @@ CREATE TABLE expenses (
 
 
 
--- Salary table
-CREATE TABLE salaries (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    approved_by INT,
-    basic_salary DECIMAL(10,2) NOT NULL,
-    allowances DECIMAL(10,2) DEFAULT 0,
-    deductions DECIMAL(10,2) DEFAULT 0,
-    net_salary DECIMAL(10,2) NOT NULL,
-    month DATE NOT NULL,
-    payment_details TEXT,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL,
-    FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL
-);
+-- Insert dummy data into roles table
+INSERT INTO roles (role_name) VALUES 
+('Admin'),
+('Manager'),
+('User');
+
+-- Insert dummy data into permissions table
+INSERT INTO permissions (permission_name, description) VALUES 
+('CREATE', 'Create permission'),
+('READ', 'Read permission'),
+('UPDATE', 'Update permission'),
+('DELETE', 'Delete permission'),
+('APPROVE', 'Approve permission');
+
+-- Insert dummy data into role_permissions table
+INSERT INTO role_permissions (role_id, permission_id) VALUES 
+(1, 1),
+(1, 2),
+(1, 3),
+(1, 4),
+(1, 5),
+(2, 1),
+(2, 2),
+(2, 3),
+(2, 5),
+(3, 1),
+(3, 2);
+
+-- Insert dummy data into users table
+INSERT INTO users (username, email, password, password_hash, role_id) VALUES 
+('admin', 'admin@example.com', 'adminpass', '$2y$10$hVniY2FlF0HGTd.ZzbHhxuU1YXPUJyNlhpB8Grr9VZMXFteyEZSta', 1),
+('manager', 'manager@example.com', 'adminpass', '$2y$10$hVniY2FlF0HGTd.ZzbHhxuU1YXPUJyNlhpB8Grr9VZMXFteyEZSta', 2),
+('user1', 'user1@example.com', 'adminpass', '$2y$10$hVniY2FlF0HGTd.ZzbHhxuU1YXPUJyNlhpB8Grr9VZMXFteyEZSta', 3);

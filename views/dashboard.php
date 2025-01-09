@@ -54,6 +54,13 @@
                 </svg>
                 Accounting
             </a>
+            <a href="/dashboard?activeSection=user-profile" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'user-profile'}">
+                <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                Profile
+            </a>
+            <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
             <a href="/dashboard?activeSection=salary" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'salary'}">
                 <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -72,7 +79,6 @@
                 </svg>
                 Filtered Data
             </a>
-            <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'DELETE') || $super_admin): ?>
             <a href="/dashboard?activeSection=users" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'users'}">
                 <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
@@ -80,7 +86,7 @@
                 Users
             </a>
             <?php endif; ?>
-            <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'DELETE') || $super_admin): ?>
+            <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
             <a href="/dashboard?activeSection=settings" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'settings'}">
                 <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -138,6 +144,9 @@
                     break;
                 case 'users':
                     include 'views/users.php';
+                    break;
+                case 'user-profile':
+                    include 'views/user-profile.php';
                     break;
                 case 'settings':
                     include 'views/settings.php';

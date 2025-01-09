@@ -1,6 +1,6 @@
 <!-- Tables Row -->
 <div class="grid gap-6">
-    <?php if(!Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'WRITE')): ?>
+    <?php if(!Users::hasPermission($_SESSION['user_id'], 'WRITE')): ?>
         <!-- Income Table -->
         <div class="bg-white p-6 rounded-lg shadow overflow-x-auto" x-data="{
             items: [],
@@ -110,7 +110,7 @@
                     <option value="pending">Pending</option>
                     <option value="approved">Approved</option>
                     <option value="denied">Denied</option>
-                    <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'DELETE')): ?>
+                    <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
                         <option value="deleted">Deleted</option>
                     <?php endif; ?>
                 </select>
@@ -130,7 +130,7 @@
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Created</th>
                             <!-- <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Modified</th> -->
-                            <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'APPROVE')): ?>
+                            <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry By</th>
                             <?php endif; ?>
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income From</th>
@@ -154,7 +154,7 @@
                                 <td class="px-4 py-2" x-text="item.id"></td>
                                 <td class="px-4 py-2" x-text="new Date(item.date_created).toLocaleString()"></td>
                                 <!-- <td class="px-4 py-2" x-text="new Date(item.date_modified).toLocaleString()"></td> -->
-                                <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'APPROVE')): ?>
+                                <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
                                     <td class="px-4 py-2" x-text="item.entry_by_name"></td>
                                 <?php endif; ?>
                                 <!-- <td class="px-4 py-2" x-text="item.entry_by_name || '-'"></td> -->
@@ -166,7 +166,7 @@
                                 <td class="px-4 py-2" x-text="item.notes"></td>
                                 <td class="px-4 py-2">
                                     <template x-if="item.status == 'pending'">
-                                        <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'APPROVE')): ?>
+                                        <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
                                             <a href="#" @click.prevent="async function() { 
                                                 try {
                                                     const response = await fetch('/api/finance/income/approve', {
@@ -191,7 +191,7 @@
                                 </td>
                                 <td class="px-4 py-2">
                                     <button @click="modalData = item; showModal = true" class="text-blue-500 hover:text-blue-700 mr-2">View</button>
-                                    <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'DELETE')): ?>
+                                    <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
                                         <button 
                                             @click="if(confirm('Are you sure you want to delete this income record?')) {
                                                 fetch('/api/finance/income/delete', {
@@ -563,7 +563,7 @@
                     <option value="pending">Pending</option>
                     <option value="approved">Approved</option>
                     <option value="denied">Denied</option>
-                    <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'DELETE')): ?>
+                    <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
                         <option value="deleted">Deleted</option>
                     <?php endif; ?>
                 </select>
@@ -584,7 +584,7 @@
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Created</th>
                             <!-- <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Modified</th> -->
                             <!-- <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Approved</th> -->
-                            <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'APPROVE')): ?>
+                            <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry By</th>
                             <?php endif; ?>
                             <!-- <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved By</th> -->
@@ -622,7 +622,7 @@
                                 <td class="px-4 py-2" x-text="item.notes"></td>
                                 <td class="px-4 py-2">
                                     <template x-if="item.status == 'pending'">
-                                        <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'APPROVE')): ?>
+                                        <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
                                             <a href="#" @click.prevent="approveExpense(item.id)" class="text-blue-500 hover:text-blue-700">Pending</a>
                                         <?php else: ?>
                                             <span>Pending</span>
@@ -634,7 +634,7 @@
                                 </td>
                                 <td class="px-4 py-2">
                                     <button @click="modalData = item; showModal = true" class="text-blue-500 hover:text-blue-700 mr-2">View</button>
-                                    <?php if(Users::hasPermission(resolve($_SESSION['user_id'], $_COOKIE['user_id']), 'DELETE')): ?>
+                                    <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
                                         <button 
                                             @click="if(confirm('Are you sure you want to delete this expense record?')) {
                                                 fetch('/api/finance/expense/delete', {

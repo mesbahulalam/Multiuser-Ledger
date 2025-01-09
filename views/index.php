@@ -15,7 +15,7 @@
             <nav class="space-x-4">
                 <?php if(Users::isLoggedIn()): ?>
                     <!-- welcome text -->
-                    <span class="text-gray-800">Welcome, <?php echo Users::getCurrentUser(resolve($_SESSION['user_id'], $_COOKIE['user_id']))['username']; ?></span>
+                    <span class="text-gray-800">Welcome, <?php echo Users::getCurrentUser($_SESSION['user_id'])['username']; ?></span>
                     <a href="/dashboard" class="text-gray-800 hover:text-gray-600">Dashboard</a>
                     <a href="/logout" class="text-gray-800 hover:text-gray-600">Logout</a>
                 <?php else: ?>
