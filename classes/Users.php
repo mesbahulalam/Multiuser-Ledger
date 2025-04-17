@@ -2,24 +2,26 @@
 error_reporting(E_ALL & ~E_NOTICE);
 class Users {
 
+    // ===== CORE/INITIALIZATION METHODS =====
+    
     public static function init() {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
     }
     
+    // ===== USER CRUD OPERATIONS =====
+    
     public static function getAllUsers($page = 1, $limit = 0) {
-        $sql = "SELECT u.user_id, u.username, u.email, r.role_name, u.is_active 
-            FROM users u 
-            JOIN roles r ON u.role_id LIKE r.role_id
-            WHERE u.is_active = TRUE
-            ORDER BY u.username";
-        
+        $users = self::getAllUserNames();
+        foreach ($users as &$user) {
+            $user['role'] = self::getUserRole($user['user_id']);
+        }
         if ($limit > 0) {
             $offset = ($page - 1) * $limit;
-            $sql .= " LIMIT $limit OFFSET $offset";
+            $users = array_slice($users, $offset, $limit);
         }
-        return DB::fetchAll($sql);
+        return $users;
     }
 
     public static function getTotalUsers() {
@@ -27,9 +29,12 @@ class Users {
         return DB::fetchOne($sql)['total_users'];
     }
 
+    public static function getTotalUsersRedundant() {
+        return count(self::getAllUserNames());
+    }
+
     public static function getAllUserNames(){
-        $sql = "SELECT user_id, username FROM users WHERE is_active = TRUE  ORDER BY username";
-        return DB::fetchAll($sql);
+        return DB::fetchAll("SELECT user_id, username FROM users WHERE is_active = TRUE  ORDER BY username");
     }
     
     public static function createUser($username, $email, $password, $role_name = null) {
@@ -44,51 +49,38 @@ class Users {
     }
     
     public static function getUserById($userId) {
-        return DB::fetchOne("SELECT user_id, username, first_name, last_name, phone_number, email, profile_picture, dob, salary, role_id, is_active FROM users WHERE user_id = ?", [$userId]);
+        $user = DB::fetchOne("SELECT * FROM users WHERE user_id = ?", [$userId]);
+        if ($user) {
+            $user['role'] = self::getUserRole($userId);
+        }
+        return $user;
     }
     
     public static function updateUser($userId, $data) {
         $allowedFields = ['username', 'first_name', 'last_name', 'phone_number', 'email', 'profile_picture', 'dob', 'salary', 'role_id', 'is_active', 'address'];
-        $data['role_id'] = self::getRoleId($data['role_name'] ? $data['role_name'] : 'User');
-
-        $updates = [];
-        $params = [];
-        
-        foreach ($data as $field => $value) {
-            if (in_array($field, $allowedFields) && $value !== '') {
-                $updates[] = "$field = ?";
-                $params[] = $value; 
-            }
+        if (isset($data['role_name'])) {
+            $data['role_id'] = self::getRoleId($data['role_name']);
+            unset($data['role_name']);
         }
-        
+        $updates = array_intersect_key($data, array_flip($allowedFields));
         if (empty($updates)) {
             return false;
         }
-        
+        $placeholders = implode(', ', array_map(fn($key) => "$key = ?", array_keys($updates)));
+        $params = array_values($updates);
         $params[] = $userId;
-        $sql = "UPDATE users SET " . implode(', ', $updates) . " WHERE user_id = ?";
-        
-        if (DB::query($sql, $params)) {
-            return true;
-        }
-        return false;
+        return DB::query("UPDATE users SET $placeholders WHERE user_id = ?", $params);
     }
     
     public static function disableUser($userId) {
-        $sql = "UPDATE users SET is_active = FALSE WHERE user_id = ?";
-        if (DB::query($sql, [$userId])) {
-            return true;
-        }
-        return false;
+        return self::updateUser($userId, ['is_active' => false]);
     }
 
     public static function deleteUser($userId) {
-        $sql = "DELETE FROM users WHERE user_id = ?";
-        if (DB::query($sql, [$userId])) {
-            return true;
-        }
-        return false;
+        return DB::query("DELETE FROM users WHERE user_id = ?", [$userId]);
     }
+    
+    // ===== PASSWORD MANAGEMENT =====
     
     public static function verifyPassword($userId, $password) {
         $user = DB::fetchOne("SELECT password FROM users WHERE user_id = ?", [$userId]);
@@ -104,60 +96,9 @@ class Users {
         }
         return false;
     }
-
-    public static function createRole($roleName) {
-        $sql = "INSERT INTO roles (role_name) VALUES (?)";
-        if (DB::query($sql, [$roleName])) {
-            $roleId = DB::fetchOne("SELECT LAST_INSERT_ID() as id")['id'];
-            return $roleId;
-        }
-        return false;
-    }
-
-    public static function getAllRoles() {
-        return DB::fetchAll("SELECT role_id, role_name FROM roles");
-    }
-
-    public static function getRolePermissions($roleId) {
-        $sql = "SELECT p.permission_name 
-                FROM role_permissions rp 
-                JOIN permissions p ON rp.permission_id = p.permission_id 
-                WHERE rp.role_id = ?";
-        return DB::fetchAll($sql, [$roleId]);
-    }
-
-    public static function getRoleId($roleName) {
-        $sql = "SELECT role_id FROM roles WHERE role_name = ?";
-        $result = DB::fetchOne($sql, [$roleName]);
-        return $result ? $result['role_id'] : null;
-    }
-
-    public static function getUserRole($userId) {
-        $sql = "SELECT r.role_id, r.role_name FROM users u JOIN roles r ON u.role_id = r.role_id WHERE u.user_id = ?";
-        return DB::fetchOne($sql, [$userId]);
-    }
-
-    public static function assignRole($userId, $roleId) {
-        $sql = "UPDATE users SET role_id = ? WHERE user_id = ?";
-        if (DB::query($sql, [$roleId, $userId])) {
-            return true;
-        }
-        return false;
-    }
     
-    public static function hasPermission($userId, $permissionName) {
-        $sql = "SELECT p.permission_name 
-                FROM users u 
-                JOIN role_permissions rp ON u.role_id = rp.role_id 
-                JOIN permissions p ON rp.permission_id = p.permission_id 
-                WHERE u.user_id = ? AND p.permission_name = ?";
-        return DB::fetchOne($sql, [$userId, $permissionName]) !== false;
-    }
-
-    private static function generateSecurityHash($userId, $username, $passwordHash) {
-        return hash('sha256', $userId . $username . $passwordHash . $_SERVER['HTTP_USER_AGENT']);
-    }
-
+    // ===== AUTHENTICATION METHODS =====
+    
     public static function login($username, $password, $remember = false) {
         $user = DB::fetchOne(
             "SELECT user_id, username, password_hash, is_active FROM users WHERE username = ?", 
@@ -250,7 +191,84 @@ class Users {
         }
         return self::getUserById($_SESSION['user_id']);
     }
+    
+    private static function generateSecurityHash($userId, $username, $passwordHash) {
+        return hash('sha256', $userId . $username . $passwordHash . $_SERVER['HTTP_USER_AGENT']);
+    }
+    
+    // ===== ROLE AND PERMISSION METHODS =====
+    
+    public static function createRole($roleName) {
+        $sql = "INSERT INTO roles (role_name) VALUES (?)";
+        if (DB::query($sql, [$roleName])) {
+            $roleId = DB::fetchOne("SELECT LAST_INSERT_ID() as id")['id'];
+            return $roleId;
+        }
+        return false;
+    }
+
+    public static function getAllRoles() {
+        return DB::fetchAll("SELECT role_id, role_name FROM roles");
+    }
+
+    public static function getRolePermissions($roleId) {
+        $sql = "SELECT p.permission_name 
+                FROM role_permissions rp 
+                JOIN permissions p ON rp.permission_id = p.permission_id 
+                WHERE rp.role_id = ?";
+        return DB::fetchAll($sql, [$roleId]);
+    }
+
+    public static function getRoleId($roleName) {
+        $sql = "SELECT role_id FROM roles WHERE role_name = ?";
+        $result = DB::fetchOne($sql, [$roleName]);
+        return $result ? $result['role_id'] : null;
+    }
+
+    public static function getUserRole($userId) {
+        $sql = "SELECT r.role_id, r.role_name FROM users u JOIN roles r ON u.role_id = r.role_id WHERE u.user_id = ?";
+        return DB::fetchOne($sql, [$userId]);
+    }
+
+    public static function assignRole($userId, $roleId) {
+        $sql = "UPDATE users SET role_id = ? WHERE user_id = ?";
+        if (DB::query($sql, [$roleId, $userId])) {
+            return true;
+        }
+        return false;
+    }
+    
+    public static function hasPermission($userId, $permissionName) {
+        $permissions = self::getRolePermissions(self::getUserRole($userId)['role_id']);
+        return in_array($permissionName, array_column($permissions, 'permission_name'));
+    }
+
+    public static function hasPermissionRaw($userId, $permissionName) {
+        $sql = "SELECT p.permission_name 
+                FROM users u 
+                JOIN role_permissions rp ON u.role_id = rp.role_id 
+                JOIN permissions p ON rp.permission_id = p.permission_id 
+                WHERE u.user_id = ? AND p.permission_name = ?";
+        return DB::fetchOne($sql, [$userId, $permissionName]) !== false;
+    }
+    
+    public static function can($action = 'READ') {
+        $userId = $_SESSION['user_id'] ?? null;
+        if (!$userId) {
+            return false;
+        }
+        $permissions = self::getRolePermissions(self::getUserRole($userId)['role_id']);
+        return in_array($action, array_column($permissions, 'permission_name'));
+    }
+
+    public static function exists($userId) {
+        $sql = "SELECT COUNT(user_id) as count FROM users WHERE user_id = ?";
+        return DB::fetchOne($sql, [$userId])['count'] > 0;
+    }
 }
+
+
+
 
 // Initialize the UserManager class
 // UserManager::init();

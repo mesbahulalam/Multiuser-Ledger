@@ -50,7 +50,7 @@
                                 }
                             },
                             async createUser() {
-                                <?php if(!Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
+                                <?php if(!Users::can('DELETE')): ?>
                                     alert('Permission denied');
                                 <?php else: ?>
                                 try {
@@ -116,7 +116,7 @@
                                 }
                             },
                             async deleteItem(id) {
-                            <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
+                            <?php if(Users::can('DELETE')): ?>
                                 if (confirm('Are you sure you want to delete this item?')) {
                                     try {
                                         this.showLoading();
@@ -147,7 +147,7 @@
                             <?php endif; ?>
                             },
                             async bulkDelete() {
-                            <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
+                            <?php if(Users::can('DELETE')): ?>
                                 if (confirm(`Are you sure you want to delete ${this.selectedRows.length} selected items?`)) {
                                     try {
                                         this.showLoading();
@@ -416,7 +416,7 @@
                                                     </button>
                                                 </template>
                                                 <!-- login as button -->
-                                                <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
+                                                <?php if(Users::can('DELETE')): ?>
                                                 <button @click="window.location.href = `/login-as?user_id=${item.id}`" class="text-green hover:text-green-700">
                                                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />

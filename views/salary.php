@@ -66,8 +66,8 @@
 
     <!-- Salary Form -->
     <div class="bg-white p-6 rounded-lg shadow mb-8">
-        <h2 class="text-xl font-bold mb-4">Add Salary Entry</h2>
-        <form id="salaryForm" method="POST" @submit.prevent="submitSalaryForm" x-data="{
+        <h2 class="text-xl font-semibold mb-4">Add Salary Entry</h2>
+        <div x-data="{
             formError: '',
             formSuccess: '',
             submitting: false,
@@ -106,6 +106,9 @@
                     if (response.ok) {
                         this.formSuccess = result.message;
                         this.$el.reset();
+                        this.basicSalary = 0;
+                        this.allowances = 0;
+                        this.deductions = 0;
                         // Reset user selection
                         if (this.$refs.userAutocomplete) {
                             this.$refs.userAutocomplete.__x.$data.selected = null;
@@ -123,154 +126,172 @@
                 }
             }
         }">
-            <!-- Success/Error Messages -->
-            <div x-show="formSuccess" x-text="formSuccess" class="mb-4 p-2 bg-green-100 text-green-700 rounded"></div>
-            <div x-show="formError" x-text="formError" class="mb-4 p-2 bg-red-100 text-red-700 rounded"></div>
+            <form @submit.prevent="submitSalaryForm">
+                <!-- Success/Error Messages -->
+                <div x-show="formSuccess" x-text="formSuccess" class="mb-4 p-2 bg-green-100 text-green-700 rounded"></div>
+                <div x-show="formError" x-text="formError" class="mb-4 p-2 bg-red-100 text-red-700 rounded"></div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- User Selection -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Employee</label>
-                    <div x-data="autocomplete({
-                        apiUrl: '/api/users/namelist',
-                        placeholder: 'Search users...',
-                        label: 'Select Employee'
-                    })" 
-                    x-init="loadItems()"
-                    class="relative" x-ref="userAutocomplete"
-                    @user-selected="$dispatch('update-salary', { salary: $event.detail.salary })">
-                        <!-- Hidden input to store the selected user ID -->
-                        <input type="hidden" name="user_id" :value="selected ? selected.id : ''">
-                        
-                        <button 
-                            @click.prevent="open = !open" 
-                            type="button"
-                            class="w-full flex items-center justify-between p-2 border rounded-md">
-                            <span x-text="selected ? selected.text : label"></span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
+                <div class="space-y-6">
+                    <!-- User Selection -->
+                    <div>
+                        <label for="employee" class="block text-sm font-medium text-gray-700 mb-2">Employee <span class="text-red-500">*</span></label>
+                        <div x-data="autocomplete({
+                            apiUrl: '/api/users/namelist',
+                            placeholder: 'Search users...',
+                            label: 'Select Employee'
+                        })" 
+                        x-init="loadItems()"
+                        class="relative z-10" x-ref="userAutocomplete"
+                        @user-selected="$dispatch('update-salary', { salary: $event.detail.salary })">
+                            <!-- Hidden input to store the selected user ID -->
+                            <input type="hidden" name="user_id" :value="selected ? selected.id : ''">
+                            
+                            <button 
+                                @click.prevent="open = !open" 
+                                type="button"
+                                class="w-full flex items-center justify-between p-2 border rounded-md">
+                                <span x-text="selected ? selected.text : label"></span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
 
-                        <!-- Dropdown -->
-                        <div 
-                            x-show="open"
-                            @click.away="open = false"
-                            class="absolute w-full mt-1 bg-white border rounded-md shadow-lg z-50">
-                            <input
-                                x-model="search"
-                                @keydown.escape.prevent="open = false"
-                                @keydown.enter.prevent="selectedIndex >= 0 ? selectItem(selectedIndex) : null"
-                                @keydown.arrow-down.prevent="navigateList('down')"
-                                @keydown.arrow-up.prevent="navigateList('up')"
-                                class="w-full p-2 border-b"
-                                :placeholder="placeholder">
+                            <!-- Dropdown -->
+                            <div 
+                                x-show="open"
+                                @click.away="open = false"
+                                class="absolute w-full mt-1 bg-white border rounded-md shadow-lg z-50">
+                                <input
+                                    x-model="search"
+                                    @keydown.escape.prevent="open = false"
+                                    @keydown.enter.prevent="selectedIndex >= 0 ? selectItem(selectedIndex) : null"
+                                    @keydown.arrow-down.prevent="navigateList('down')"
+                                    @keydown.arrow-up.prevent="navigateList('up')"
+                                    class="w-full p-2 border-b"
+                                    :placeholder="placeholder">
 
-                            <ul class="max-h-60 overflow-y-auto">
-                                <template x-for="(item, index) in filteredItems" :key="item.id">
-                                    <li
-                                        @click="
-                                            selected = item; 
-                                            open = false; 
-                                            $dispatch('user-selected', { salary: item.salary });
-                                        "
-                                        :class="{'bg-blue-50': selectedIndex === index}"
-                                        class="p-2 cursor-pointer hover:bg-gray-100">
-                                        <span x-text="item.text"></span>
-                                    </li>
-                                </template>
-                            </ul>
+                                <ul class="max-h-60 overflow-y-auto">
+                                    <template x-for="(item, index) in filteredItems" :key="item.id">
+                                        <li
+                                            @click="
+                                                selected = item; 
+                                                open = false; 
+                                                $dispatch('user-selected', { salary: item.salary });
+                                            "
+                                            :class="{'bg-blue-50': selectedIndex === index}"
+                                            class="p-2 cursor-pointer hover:bg-gray-100">
+                                            <span x-text="item.text"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
                         </div>
                     </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Month -->
+                        <div>
+                            <label for="salary-month" class="block text-sm font-medium text-gray-700 mb-2">Salary Month <span class="text-red-500">*</span></label>
+                            <input type="text" 
+                                id="salary-month"
+                                name="month" 
+                                value="<?= date('F, Y', strtotime('last month')) ?>"
+                                readonly
+                                class="w-full p-2 border rounded bg-gray-50 focus:outline-none">
+                        </div>
+
+                        <!-- Net Salary (Calculated) -->
+                        <div>
+                            <label for="net-salary" class="block text-sm font-medium text-gray-700 mb-2">Net Salary</label>
+                            <div class="flex items-center">
+                                <!-- <span class="text-gray-500 mr-2">$</span> -->
+                                <input type="number" 
+                                    id="net-salary"
+                                    step="0.01" 
+                                    name="net_salary" 
+                                    :value="getNetSalary()"
+                                    placeholder="Calculated net salary" 
+                                    readonly
+                                    class="w-full p-2 border rounded bg-gray-50">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Basic Salary -->
+                        <div>
+                            <label for="basic-salary" class="block text-sm font-medium text-gray-700 mb-2">Basic Salary <span class="text-red-500">*</span></label>
+                            <div class="flex items-center">
+                                <!-- <span class="text-gray-500 mr-2">$</span> -->
+                                <input type="number" 
+                                    id="basic-salary"
+                                    step="0.01" 
+                                    name="basic_salary" 
+                                    x-model="basicSalary"
+                                    @update-salary.window="basicSalary = $event.detail.salary || 0"
+                                    placeholder="Enter basic salary" 
+                                    required
+                                    class="w-full p-2 border rounded">
+                            </div>
+                        </div>
+
+                        <!-- Allowances -->
+                        <div>
+                            <label for="allowances" class="block text-sm font-medium text-gray-700 mb-2">Allowances</label>
+                            <div class="flex items-center">
+                                <!-- <span class="text-gray-500 mr-2">$</span> -->
+                                <input type="number" 
+                                    id="allowances"
+                                    step="0.01" 
+                                    name="allowances" 
+                                    x-model="allowances"
+                                    placeholder="Enter allowances" 
+                                    class="w-full p-2 border rounded">
+                            </div>
+                        </div>
+
+                        <!-- Deductions -->
+                        <div>
+                            <label for="deductions" class="block text-sm font-medium text-gray-700 mb-2">Deductions</label>
+                            <div class="flex items-center">
+                                <!-- <span class="text-gray-500 mr-2">$</span> -->
+                                <input type="number" 
+                                    id="deductions"
+                                    step="0.01" 
+                                    name="deductions" 
+                                    x-model="deductions"
+                                    placeholder="Enter deductions" 
+                                    class="w-full p-2 border rounded">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Details -->
+                    <div>
+                        <label for="payment-details" class="block text-sm font-medium text-gray-700 mb-2">Payment Details</label>
+                        <textarea 
+                            id="payment-details"
+                            name="payment_details" 
+                            placeholder="Enter payment details" 
+                            rows="3"
+                            class="w-full p-2 border rounded"></textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div>
+                        <button 
+                            type="submit" 
+                            class="w-full bg-blue-500 text-white p-3 rounded-md font-medium hover:bg-blue-600 disabled:opacity-50"
+                            :disabled="submitting">
+                            <span x-show="!submitting">Save Salary Entry</span>
+                            <span x-show="submitting">Saving...</span>
+                        </button>
+                    </div>
                 </div>
-
-                <!-- Month -->
-                <div>
-                    <label for="salary-month" class="block text-sm font-medium text-gray-700 mb-2">Salary Month</label>
-                    <input type="text" 
-                        id="salary-month"
-                        name="month" 
-                        value="<?= date('F, Y', strtotime('last month')) ?>"
-                        readonly
-                        class="w-full p-2 border rounded bg-gray-50 focus:outline-none">
-                </div>
-
-
-                <!-- Basic Salary -->
-                <div>
-                    <label for="basic-salary" class="block text-sm font-medium text-gray-700 mb-2">Basic Salary</label>
-                    <input type="number" 
-                        id="basic-salary"
-                        step="0.01" 
-                        name="basic_salary" 
-                        x-model="basicSalary"
-                        @update-salary.window="basicSalary = $event.detail.salary || 0"
-                        placeholder="Enter basic salary" 
-                        required
-                        class="w-full p-2 border rounded">
-                </div>
-
-                <!-- Allowances -->
-                <div>
-                    <label for="allowances" class="block text-sm font-medium text-gray-700 mb-2">Allowances</label>
-                    <input type="number" 
-                        id="allowances"
-                        step="0.01" 
-                        name="allowances" 
-                        x-model="allowances"
-                        placeholder="Enter allowances" 
-                        class="w-full p-2 border rounded">
-                </div>
-
-                <!-- Deductions -->
-                <div>
-                    <label for="deductions" class="block text-sm font-medium text-gray-700 mb-2">Deductions</label>
-                    <input type="number" 
-                        id="deductions"
-                        step="0.01" 
-                        name="deductions" 
-                        x-model="deductions"
-                        placeholder="Enter deductions" 
-                        class="w-full p-2 border rounded">
-                </div>
-
-                <!-- Net Salary (Calculated) -->
-                <div>
-                    <label for="net-salary" class="block text-sm font-medium text-gray-700 mb-2">Net Salary</label>
-                    <input type="number" 
-                        id="net-salary"
-                        step="0.01" 
-                        name="net_salary" 
-                        :value="getNetSalary()"
-                        placeholder="Calculated net salary" 
-                        readonly
-                        class="w-full p-2 border rounded bg-gray-50">
-                </div>
-
-                <!-- Payment Details -->
-                <div class="md:col-span-2">
-                    <label for="payment-details" class="block text-sm font-medium text-gray-700 mb-2">Payment Details</label>
-                    <textarea 
-                        id="payment-details"
-                        name="payment_details" 
-                        placeholder="Enter payment details" 
-                        rows="3"
-                        class="w-full p-2 border rounded"></textarea>
-                </div>
-            </div>
-
-            <!-- Submit Button -->
-            <div class="mt-6">
-                <button 
-                    type="submit" 
-                    class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:opacity-50"
-                    :disabled="submitting">
-                    <span x-show="!submitting">Save Salary Entry</span>
-                    <span x-show="submitting">Saving...</span>
-                </button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
+
     <!-- Salary Records Table -->
     <div class="bg-white p-6 rounded-lg shadow" x-data="{
         records: [],
@@ -323,8 +344,8 @@
                 this.currentPage--;
             }
         }
-    }" x-init="loadRecords()">
-        <h2 class="text-xl font-bold mb-4">Salary Summary</h2>
+    }" x-init="loadRecords()" @refresh-salary-data.window="loadRecords()">
+        <h2 class="text-xl font-semibold mb-4">Salary Summary</h2>
         
         <!-- Error Message -->
         <div x-show="error" class="text-red-600 mb-4 p-2 bg-red-50 rounded" x-text="error"></div>
@@ -375,12 +396,21 @@
                                 x-text="'$' + Number(record.payable_amount).toFixed(2)"></td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <button 
-                                    class="text-blue-600 hover:text-blue-900"
+                                    class="text-blue-600 hover:text-blue-900 mr-2"
                                     @click="$dispatch('open-salary-details', { 
                                         user_id: record.user_id,
                                         username: record.username
                                     })">
                                     View History
+                                </button>
+                                <button 
+                                    class="text-green-600 hover:text-green-900"
+                                    @click="$dispatch('open-payment-modal', { 
+                                        employeeId: record.user_id, 
+                                        employeeName: record.username,
+                                        payableAmount: record.payable_amount
+                                    })">
+                                    Pay Salary
                                 </button>
                             </td>
                         </tr>
@@ -390,20 +420,32 @@
 
             <!-- Pagination Controls -->
             <div class="mt-4 flex items-center justify-between">
-                <div class="flex items-center gap-2">
+                <div class="text-sm text-gray-700">
+                    Showing <span x-text="filteredRecords.length ? (currentPage - 1) * itemsPerPage + 1 : 0"></span> to 
+                    <span x-text="Math.min(currentPage * itemsPerPage, filteredRecords.length)"></span> of 
+                    <span x-text="filteredRecords.length"></span> entries
+                </div>
+                <div class="flex space-x-2">
                     <button 
-                        class="px-3 py-1 border rounded hover:bg-gray-100"
-                        @click="prevPage"
-                        :disabled="currentPage === 1">
+                        @click="prevPage()"
+                        :disabled="currentPage === 1"
+                        class="px-3 py-1 border rounded" 
+                        :class="{'opacity-50 cursor-not-allowed': currentPage === 1}">
                         Previous
                     </button>
-                    <span class="text-sm text-gray-700">
-                        Page <span x-text="currentPage"></span> of <span x-text="totalPages"></span>
-                    </span>
+                    <template x-for="page in Math.min(5, totalPages)" :key="page">
+                        <button 
+                            @click="currentPage = page;" 
+                            class="px-3 py-1 border rounded"
+                            :class="{'bg-blue-500 text-white': currentPage === page}">
+                            <span x-text="page"></span>
+                        </button>
+                    </template>
                     <button 
-                        class="px-3 py-1 border rounded hover:bg-gray-100"
-                        @click="nextPage"
-                        :disabled="currentPage === totalPages">
+                        @click="nextPage()"
+                        :disabled="currentPage >= totalPages"
+                        class="px-3 py-1 border rounded"
+                        :class="{'opacity-50 cursor-not-allowed': currentPage >= totalPages}">
                         Next
                     </button>
                 </div>
@@ -422,17 +464,19 @@
         hasMore: true,
         async loadPayments() {
             if (this.loading || !this.hasMore) return;
-            
+        
             this.loading = true;
             try {
                 const response = await fetch(`/api/salary/history/${this.userId}?page=${this.page}`);
                 const data = await response.json();
-                
-                if (data.payments.length < 10) {
+        
+                // Update to use 'history' instead of 'payments'
+                if (data.history.length < 10) {
                     this.hasMore = false;
                 }
-                
-                this.payments = [...this.payments, ...data.payments];
+        
+                // Map 'history' to the expected format if necessary
+                this.payments = [...this.payments, ...data.history];
                 this.page++;
             } catch (error) {
                 console.error('Error loading payments:', error);
@@ -480,7 +524,8 @@
                     x-transition:leave="ease-in duration-200"
                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+                    style="max-height: 70vh; overflow-y: auto;">
                     
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                         <div class="sm:flex sm:items-start">
@@ -514,8 +559,8 @@
                                             </template>
                                             <template x-for="payment in payments" :key="payment.id">
                                                 <tr>
-                                                    <td class="px-6 py-4 whitespace-nowrap" x-text="new Date(payment.date).toLocaleDateString()"></td>
-                                                    <td class="px-6 py-4 whitespace-nowrap" x-text="'$' + parseFloat(payment.amount).toFixed(2)"></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap" x-text="new Date(payment.created_at).toLocaleDateString()"></td>
+                                                    <td class="px-6 py-4 whitespace-nowrap" x-text="'$' + parseFloat(payment.net_salary).toFixed(2)"></td>
                                                     <td class="px-6 py-4 whitespace-nowrap">
                                                         <span x-text="payment.status"
                                                             :class="{
@@ -544,6 +589,153 @@
                             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gray-600 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto sm:text-sm"
                             @click="showModal = false">
                             Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Salary Payment Modal -->
+    <div x-data="{ 
+        showPaymentModal: false, 
+        employeeId: null, 
+        employeeName: '', 
+        amount: 0, 
+        payableAmount: 0, 
+        paymentDetails: '', 
+        method: '', 
+        submitting: false,
+        async submitPayment() {
+            this.submitting = true;
+            try {
+                const response = await fetch('/api/finance/expense/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        entry_by: <?= $_SESSION['user_id'] ?>,
+                        expense_by: this.employeeId,
+                        category: 'Salary',
+                        purpose: 'Salary',
+                        amount: this.amount,
+                        method: this.method,
+                        date_created: new Date().toISOString(),
+                        notes: this.paymentDetails
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Salary payment recorded successfully');
+                    this.showPaymentModal = false;
+                    this.amount = 0;
+                    this.paymentDetails = '';
+                    this.method = '';
+                    window.dispatchEvent(new CustomEvent('refresh-salary-data'));
+                } else {
+                    alert(result.error || 'Failed to record salary payment');
+                }
+            } catch (error) {
+                console.error('Error submitting payment:', error);
+                alert('An error occurred while submitting the payment');
+            } finally {
+                this.submitting = false;
+            }
+        }
+    }" 
+    @open-payment-modal.window="
+        showPaymentModal = true;
+        employeeId = $event.detail.employeeId;
+        employeeName = $event.detail.employeeName;
+        payableAmount = parseFloat($event.detail.payableAmount || 0);
+        amount = payableAmount;
+    ">
+        <div x-show="showPaymentModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div x-show="showPaymentModal" 
+                    x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 transition-opacity" 
+                    @click="showPaymentModal = false">
+                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                </div>
+
+                <div x-show="showPaymentModal" 
+                    x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                                    Record Salary Payment - <span x-text="employeeName"></span>
+                                </h3>
+                                <div class="space-y-6">
+                                    <div>
+                                        <label for="payment-amount" class="block text-sm font-medium text-gray-700 mb-2">Amount <span class="text-red-500">*</span></label>
+                                        <div class="flex items-center">
+                                            <!-- <span class="text-gray-500 mr-2">$</span> -->
+                                            <input type="number" 
+                                                id="payment-amount" 
+                                                x-model="amount" 
+                                                step="0.01" 
+                                                placeholder="Enter payment amount" 
+                                                class="w-full p-2 border rounded" 
+                                                required>
+                                        </div>
+                                        <p class="text-sm text-gray-500 mt-1">Payable: $<span x-text="payableAmount.toFixed(2)"></span></p>
+                                    </div>
+                                    <div>
+                                        <label for="payment-method" class="block text-sm font-medium text-gray-700 mb-2">Payment Method <span class="text-red-500">*</span></label>
+                                        <select 
+                                            id="payment-method" 
+                                            x-model="method" 
+                                            class="w-full p-2 border rounded bg-white" 
+                                            required>
+                                            <option value="">Select Payment Method</option>
+                                            <option value="Bank Transfer">Bank Transfer</option>
+                                            <option value="Bkash">Bkash</option>
+                                            <option value="Nagad">Nagad</option>
+                                            <option value="Credit Card">Credit Card</option>
+                                            <option value="Cash">Cash</option>
+                                            <option value="Check">Check</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="payment-details" class="block text-sm font-medium text-gray-700 mb-2">Payment Details</label>
+                                        <textarea 
+                                            id="payment-details" 
+                                            x-model="paymentDetails" 
+                                            placeholder="Enter payment details" 
+                                            rows="3" 
+                                            class="w-full p-2 border rounded"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="button" 
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                            @click="submitPayment()" 
+                            :disabled="submitting">
+                            <span x-show="!submitting">Submit Payment</span>
+                            <span x-show="submitting">Processing...</span>
+                        </button>
+                        <button type="button" 
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                            @click="showPaymentModal = false">
+                            Cancel
                         </button>
                     </div>
                 </div>

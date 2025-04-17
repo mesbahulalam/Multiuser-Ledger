@@ -1,6 +1,5 @@
 <!-- Tables Row -->
 <div class="grid gap-6">
-    <?php if(!Users::hasPermission($_SESSION['user_id'], 'WRITE')): ?>
         <!-- Income Table -->
         <div class="bg-white p-6 rounded-lg shadow overflow-x-auto" x-data="{
             items: [],
@@ -110,7 +109,7 @@
                     <option value="pending">Pending</option>
                     <option value="approved">Approved</option>
                     <option value="denied">Denied</option>
-                    <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
+                    <?php if(Users::can('DELETE')): ?>
                         <option value="deleted">Deleted</option>
                     <?php endif; ?>
                 </select>
@@ -130,7 +129,7 @@
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Created</th>
                             <!-- <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Modified</th> -->
-                            <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
+                            <?php if(Users::can('APPROVE')): ?>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry By</th>
                             <?php endif; ?>
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income From</th>
@@ -154,7 +153,7 @@
                                 <td class="px-4 py-2" x-text="item.id"></td>
                                 <td class="px-4 py-2" x-text="new Date(item.date_created).toLocaleString()"></td>
                                 <!-- <td class="px-4 py-2" x-text="new Date(item.date_modified).toLocaleString()"></td> -->
-                                <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
+                                <?php if(Users::can('APPROVE')): ?>
                                     <td class="px-4 py-2" x-text="item.entry_by_name"></td>
                                 <?php endif; ?>
                                 <!-- <td class="px-4 py-2" x-text="item.entry_by_name || '-'"></td> -->
@@ -166,7 +165,7 @@
                                 <td class="px-4 py-2" x-text="item.notes"></td>
                                 <td class="px-4 py-2">
                                     <template x-if="item.status == 'pending'">
-                                        <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
+                                        <?php if(Users::can('APPROVE')): ?>
                                             <a href="#" @click.prevent="async function() { 
                                                 try {
                                                     const response = await fetch('/api/finance/income/approve', {
@@ -191,7 +190,7 @@
                                 </td>
                                 <td class="px-4 py-2">
                                     <button @click="modalData = item; showModal = true" class="text-blue-500 hover:text-blue-700 mr-2">View</button>
-                                    <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
+                                    <?php if(Users::can('DELETE')): ?>
                                         <button 
                                             @click="if(confirm('Are you sure you want to delete this income record?')) {
                                                 fetch('/api/finance/income/delete', {
@@ -264,13 +263,13 @@
                                     <tr>
                                         <td class="font-medium pr-4">Amount:</td>
                                         <td>
-                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                                                 <input type="number" step="0.01" 
                                                     x-model="modalData.amount"
                                                     class="border p-1 rounded w-full"
                                                     @change="updateField('amount', $event.target.value)">
                                             </template>
-                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>))">
+                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>))">
                                                 <span x-text="modalData.amount"></span>
                                             </template>
                                         </td>
@@ -284,13 +283,13 @@
                                     <tr>
                                         <td class="font-medium pr-4">Category:</td>
                                         <td>
-                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                                                 <input type="text" 
                                                     x-model="modalData.category"
                                                     class="border p-1 rounded w-full"
                                                     @change="updateField('category', $event.target.value)">
                                             </template>
-                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>))">
+                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>))">
                                                 <span x-text="modalData.category"></span>
                                             </template>
                                         </td>
@@ -298,7 +297,7 @@
                                     <tr>
                                         <td class="font-medium pr-4">Method:</td>
                                         <td>
-                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                                                 <select x-model="modalData.method" 
                                                     class="border p-1 rounded w-full"
                                                     @change="updateField('method', $event.target.value)">
@@ -310,7 +309,7 @@
                                                     <option value="Check">Check</option>
                                                 </select>
                                             </template>
-                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>))">
+                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>))">
                                                 <span x-text="modalData.method"></span>
                                             </template>
                                         </td>
@@ -318,13 +317,13 @@
                                     <tr>
                                         <td class="font-medium pr-4">Bank:</td>
                                         <td>
-                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                                                 <input type="text" 
                                                     x-model="modalData.bank"
                                                     class="border p-1 rounded w-full"
                                                     @change="updateField('bank', $event.target.value)">
                                             </template>
-                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>))">
+                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>))">
                                                 <span x-text="modalData.bank"></span>
                                             </template>
                                         </td>
@@ -340,13 +339,13 @@
                                     <tr>
                                         <td class="font-medium pr-4">Account Number:</td>
                                         <td>
-                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                                                 <input type="text" 
                                                     x-model="modalData.account_number"
                                                     class="border p-1 rounded w-full"
                                                     @change="updateField('account_number', $event.target.value)">
                                             </template>
-                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>))">
+                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>))">
                                                 <span x-text="modalData.account_number || '-'"></span>
                                             </template>
                                         </td>
@@ -354,13 +353,13 @@
                                     <tr>
                                         <td class="font-medium pr-4">Transaction Number:</td>
                                         <td>
-                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                                                 <input type="text" 
                                                     x-model="modalData.transaction_number"
                                                     class="border p-1 rounded w-full"
                                                     @change="updateField('transaction_number', $event.target.value)">
                                             </template>
-                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>))">
+                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>))">
                                                 <span x-text="modalData.transaction_number || '-'"></span>
                                             </template>
                                         </td>
@@ -403,13 +402,13 @@
                                     <tr>
                                         <td class="font-medium pr-4">Notes:</td>
                                         <td>
-                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                                                 <textarea 
                                                     x-model="modalData.notes"
                                                     class="border p-1 rounded w-full"
                                                     @change="updateField('notes', $event.target.value)"></textarea>
                                             </template>
-                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>))">
+                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>))">
                                                 <span x-text="modalData.notes"></span>
                                             </template>
                                         </td>
@@ -420,7 +419,7 @@
                     </div>
 
                     <div class="mt-6 flex justify-end gap-2">
-                        <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                        <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                             <button 
                                 @click="saveChanges()"
                                 class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
@@ -563,7 +562,7 @@
                     <option value="pending">Pending</option>
                     <option value="approved">Approved</option>
                     <option value="denied">Denied</option>
-                    <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
+                    <?php if(Users::can('DELETE')): ?>
                         <option value="deleted">Deleted</option>
                     <?php endif; ?>
                 </select>
@@ -584,7 +583,7 @@
                             <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Created</th>
                             <!-- <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Modified</th> -->
                             <!-- <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Approved</th> -->
-                            <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
+                            <?php if(Users::can('APPROVE')): ?>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry By</th>
                             <?php endif; ?>
                             <!-- <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved By</th> -->
@@ -622,7 +621,7 @@
                                 <td class="px-4 py-2" x-text="item.notes"></td>
                                 <td class="px-4 py-2">
                                     <template x-if="item.status == 'pending'">
-                                        <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
+                                        <?php if(Users::can('APPROVE')): ?>
                                             <a href="#" @click.prevent="approveExpense(item.id)" class="text-blue-500 hover:text-blue-700">Pending</a>
                                         <?php else: ?>
                                             <span>Pending</span>
@@ -634,7 +633,7 @@
                                 </td>
                                 <td class="px-4 py-2">
                                     <button @click="modalData = item; showModal = true" class="text-blue-500 hover:text-blue-700 mr-2">View</button>
-                                    <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
+                                    <?php if(Users::can('DELETE')): ?>
                                         <button 
                                             @click="if(confirm('Are you sure you want to delete this expense record?')) {
                                                 fetch('/api/finance/expense/delete', {
@@ -707,13 +706,13 @@
                                     <tr>
                                         <td class="font-medium pr-4">Amount:</td>
                                         <td>
-                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                                                 <input type="number" step="0.01" 
                                                     x-model="modalData.amount"
                                                     class="border p-1 rounded w-full"
                                                     @change="updateField('amount', $event.target.value)">
                                             </template>
-                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>))">
+                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>))">
                                                 <span x-text="modalData.amount"></span>
                                             </template>
                                         </td>
@@ -727,13 +726,13 @@
                                     <tr>
                                         <td class="font-medium pr-4">Category:</td>
                                         <td>
-                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                                                 <input type="text" 
                                                     x-model="modalData.category"
                                                     class="border p-1 rounded w-full"
                                                     @change="updateField('category', $event.target.value)">
                                             </template>
-                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>))">
+                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>))">
                                                 <span x-text="modalData.category"></span>
                                             </template>
                                         </td>
@@ -741,7 +740,7 @@
                                     <tr>
                                         <td class="font-medium pr-4">Method:</td>
                                         <td>
-                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                                                 <select x-model="modalData.method" 
                                                     class="border p-1 rounded w-full"
                                                     @change="updateField('method', $event.target.value)">
@@ -753,7 +752,7 @@
                                                     <option value="Check">Check</option>
                                                 </select>
                                             </template>
-                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>))">
+                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>))">
                                                 <span x-text="modalData.method"></span>
                                             </template>
                                         </td>
@@ -761,13 +760,13 @@
                                     <tr>
                                         <td class="font-medium pr-4">Bank:</td>
                                         <td>
-                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                                                 <input type="text" 
                                                     x-model="modalData.bank"
                                                     class="border p-1 rounded w-full"
                                                     @change="updateField('bank', $event.target.value)">
                                             </template>
-                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>))">
+                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>))">
                                                 <span x-text="modalData.bank"></span>
                                             </template>
                                         </td>
@@ -818,13 +817,13 @@
                                     <tr>
                                         <td class="font-medium pr-4">Notes:</td>
                                         <td>
-                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                                            <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                                                 <textarea 
                                                     x-model="modalData.notes"
                                                     class="border p-1 rounded w-full"
                                                     @change="updateField('notes', $event.target.value)"></textarea>
                                             </template>
-                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>))">
+                                            <template x-if="!(modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>))">
                                                 <span x-text="modalData.notes"></span>
                                             </template>
                                         </td>
@@ -835,7 +834,7 @@
                     </div>
 
                     <div class="mt-6 flex justify-end gap-2">
-                        <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::hasPermission($_SESSION['user_id'], 'DELETE') ? 'true' : 'false' ?>)">
+                        <template x-if="modalData.status === 'pending' && (modalData.entry_by == <?= $_SESSION['user_id'] ?> || <?= Users::can('DELETE') ? 'true' : 'false' ?>)">
                             <button 
                                 @click="saveChanges()"
                                 class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
@@ -851,5 +850,4 @@
                 </div>
             </div>
         </div>
-    <?php endif; ?>
 </div>

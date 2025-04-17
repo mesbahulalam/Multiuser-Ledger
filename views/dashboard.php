@@ -41,12 +41,18 @@
          <div class="flex items-center justify-center h-16 bg-gray-900">
             <span class="text-white text-xl font-bold">Dashboard</span>
         </div>
-        <nav class="mt-8">
+        <nav class="mt-8 overflow-y-auto flex-1 flex flex-col" style="max-height: calc(100vh - 4rem);">
             <a href="/dashboard" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'dashboard'}">
                 <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                 </svg>
                 Dashboard
+            </a>
+            <a href="/dashboard?activeSection=filtered-data" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'filtered-data'}">
+                <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L14 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 019 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+                </svg>
+                Filtered Data
             </a>
             <a href="/dashboard?activeSection=accounting" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'accounting'}">
                 <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,13 +60,31 @@
                 </svg>
                 Accounting
             </a>
-            <a href="/dashboard?activeSection=user-profile" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'user-profile'}">
+            <a href="/dashboard?activeSection=accounting-2" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'accounting-2'}">
                 <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
-                Profile
+                Accounting (old)
             </a>
-            <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
+            <?php if(Users::can('APPROVE')): ?>
+            <a href="/dashboard?activeSection=projection" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'projection'}">
+                <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h11M9 21V3m0 18l-3-3m3 3l3-3"/>
+                </svg>
+                Financial Projections
+            </a>
+            <a href="/dashboard?activeSection=bandwidth-bills" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'bandwidth-bills'}">
+                <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h11M9 21V3m0 18l-3-3m3 3l3-3"/>
+                </svg>
+                Bandwidth Bills
+            </a>
+            <!-- <a href="/dashboard?activeSection=bandwidth-resellers" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'bandwidth-resellers'}">
+                <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h3m4 4v2a4 4 0 01-4 4H9a4 4 0 01-4-4v-2m4 0v-2a4 4 0 014-4h3m4 4v2a4 4 0 01-4 4H9a4 4 0 01-4-4v-2m4 0h6"/>
+                </svg>
+                Bandwidth Resellers
+            </a> -->
             <a href="/dashboard?activeSection=salary" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'salary'}">
                 <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -73,12 +97,6 @@
                 </svg>
                 Salary History
             </a>
-            <a href="/dashboard?activeSection=test" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'filtered'}">
-                <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414v6.586a1 1 0 01-1.414.707l-4-2A1 1 0 018 18v-4.586l-6.293-6.293A1 1 0 013 6.586V4z"/>
-                </svg>
-                Filtered Data
-            </a>
             <a href="/dashboard?activeSection=users" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'users'}">
                 <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
@@ -86,7 +104,13 @@
                 Users
             </a>
             <?php endif; ?>
-            <?php if(Users::hasPermission($_SESSION['user_id'], 'DELETE')): ?>
+            <a href="/dashboard?activeSection=user-profile" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'user-profile'}">
+                <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                Profile
+            </a>
+            <?php if(Users::can('DELETE')): ?>
             <a href="/dashboard?activeSection=settings" class="flex items-center px-6 py-3 text-gray-900 hover:bg-gray-200" :class="{'bg-gray-200': activeSection === 'settings'}">
                 <svg class="h-6 w-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -130,11 +154,23 @@
             <?php
             switch($activeSection) {
                 case 'dashboard':
-                    // include 'views/transaction_form.php';
                     include 'views/summary.php';
                     break;
+                case 'filtered-data':
+                    include 'views/filtered-data.php';
+                    break;
                 case 'accounting':
+                    include 'views/income-expense-form.php';
+                    break;
+                case 'accounting-2':
                     include 'views/accounting.php';
+                    break;
+                case 'projection':
+                    include 'views/financial-projection.php';
+                    break;
+                case 'bandwidth-bills':
+                    include 'views/bw-bill-payment.php';
+                    include 'views/bw-vendors.php';
                     break;
                 case 'salary':
                     include 'views/salary.php';
@@ -151,6 +187,8 @@
                 case 'settings':
                     include 'views/settings.php';
                     break;
+                    default:
+                    echo '<h1 class="text-2xl font-bold text-gray-800">Welcome to the Dashboard</h1>';
             }
             ?>
         </div>

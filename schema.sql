@@ -59,7 +59,6 @@ CREATE TABLE user_metadata (
     UNIQUE KEY user_meta_key (user_id, meta_key)
 );
 
-
 -- attachments
 CREATE TABLE attachments (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -82,7 +81,6 @@ CREATE TABLE activity_logs (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
-
 -- Incomes table
 CREATE TABLE incomes (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -98,6 +96,7 @@ CREATE TABLE incomes (
     notes TEXT,
     attachment_id INT,
     status ENUM('pending', 'approved', 'denied', 'deleted') DEFAULT 'pending',
+    date_realized TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Adding date_realized field
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     date_approved TIMESTAMP NULL,  -- Adding date_approved field
@@ -122,6 +121,7 @@ CREATE TABLE expenses (
     notes TEXT,
     attachment_id INT,
     status ENUM('pending', 'approved', 'denied', 'deleted') DEFAULT 'pending',
+    date_realized TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Adding date_realized field
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     date_approved TIMESTAMP NULL,
@@ -130,6 +130,87 @@ CREATE TABLE expenses (
     FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE SET NULL
 );
 
+
+CREATE TABLE salaries (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    month VARCHAR(20) NOT NULL,
+    basic_salary DECIMAL(10, 2) NOT NULL,
+    allowances DECIMAL(10, 2) DEFAULT 0.00,
+    deductions DECIMAL(10, 2) DEFAULT 0.00,
+    net_salary DECIMAL(10, 2) NOT NULL,
+    payment_details TEXT,
+    approved_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+-- Add index for salary lookups
+ALTER TABLE salaries ADD INDEX idx_user_salary (user_id, created_at);
+
+CREATE TABLE income_projections (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    entry_by INT,
+    income_from VARCHAR(255) NOT NULL,
+    category VARCHAR(100),
+    amount DECIMAL(10,2) NOT NULL,
+    notes TEXT,
+    date_realized TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Adding date_realized field
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (entry_by) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+CREATE TABLE expense_projections (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    entry_by INT,
+    expense_by VARCHAR(255) NOT NULL,
+    category VARCHAR(100),
+    purpose TEXT,
+    amount DECIMAL(10,2) NOT NULL,
+    notes TEXT,
+    date_realized TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Adding date_realized field
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (entry_by) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+CREATE TABLE bw_vendors (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    vendor_name VARCHAR(255) NOT NULL UNIQUE,
+    contact_person VARCHAR(100),
+    phone_number VARCHAR(20),
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE bw_bills (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    vendor_id INT,
+    bill_number VARCHAR(100) NOT NULL UNIQUE,
+    bill_month VARCHAR(20) NOT NULL,
+    bill_month_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    amount DECIMAL(10,2) NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (vendor_id) REFERENCES bw_vendors(id) ON DELETE SET NULL
+);
+
+CREATE TABLE bw_metadata (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    bill_id INT, -- Added to associate metadata with a specific bill
+    type VARCHAR(255) NOT NULL, -- Changed to store the type of bandwidth
+    quantity DECIMAL(10,2) NOT NULL, -- Added to store quantity
+    unit_price DECIMAL(10,2) NOT NULL, -- Added to store unit price
+    total DECIMAL(10,2) NOT NULL, -- Added to store the total for the item
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (bill_id) REFERENCES bw_bills(id) ON DELETE CASCADE
+);
 
 
 -- Insert dummy data into roles table

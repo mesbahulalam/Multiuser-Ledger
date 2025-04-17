@@ -84,3 +84,39 @@ class DB {
 // if ($result === false) {
 //     print_r(DB::getLastError());
 // }
+
+
+// Example of transaction handling
+// try {
+//     $db = DB::getInstance();
+//     $db->beginTransaction();
+
+//     DB::query("INSERT INTO users (name) VALUES (?)", ['Alice']);
+//     DB::query("UPDATE accounts SET balance = balance - 100 WHERE user_id = ?", [1]);
+//     DB::query("UPDATE accounts SET balance = balance + 100 WHERE user_id = ?", [2]);
+
+//     // example of prepare
+//     $stmt = $db->prepare("INSERT INTO logs (user_id, action) VALUES (?, ?)");
+//     $stmt->execute([1, 'Transaction started']);
+//     $stmt = $db->prepare("INSERT INTO logs (user_id, action) VALUES (?, ?)");
+
+
+//     // example of prepare and execute with foreach loop
+//     $stmt = $db->prepare("INSERT INTO logs (user_id, action) VALUES (?, ?)");
+//     $actions = [
+//         [1, 'Transaction started'],
+//         [2, 'Transaction in progress'],
+//         [3, 'Transaction completed']
+//     ];
+//     foreach ($actions as $action) {
+//         $stmt->execute($action);
+//     }
+
+
+
+//     $db->commit();
+//     echo "Transaction completed successfully";
+// } catch (Exception $e) {
+//     $db->rollBack();
+//     echo "Transaction failed: " . $e->getMessage();
+// }

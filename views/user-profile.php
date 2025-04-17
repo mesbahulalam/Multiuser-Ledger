@@ -23,7 +23,7 @@ if (!$user) {
                     class="w-24 h-24 rounded-full object-cover"
                     alt="Profile picture"
                 >
-                <?php if (Users::hasPermission($_SESSION['user_id'], 'UPDATE')): ?>
+                <?php if (Users::can('UPDATE')): ?>
                 <label class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full p-2 cursor-pointer hover:bg-blue-600">
                     <input 
                         type="file" 
@@ -84,9 +84,9 @@ if (!$user) {
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Username</label>
                         <input type="text" x-model="profile.username" 
-                            <?php if (!Users::hasPermission($_SESSION['user_id'], 'UPDATE')): ?>readonly<?php endif; ?>
+                            <?php if (!Users::can('UPDATE')): ?>readonly<?php endif; ?>
                             class="mt-1 block w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500
-                            <?php if (!Users::hasPermission($_SESSION['user_id'], 'UPDATE')): ?> bg-gray-100<?php endif; ?>">
+                            <?php if (!Users::can('UPDATE')): ?> bg-gray-100<?php endif; ?>">
                     </div>
 
                     <div>
@@ -104,9 +104,9 @@ if (!$user) {
                                 class="mt-1 block w-full p-2 rounded-md border-gray-300 shadow-sm bg-gray-100">
                         <?php else: ?>
                             <select x-model="profile.role_name" 
-                                <?php if (!Users::hasPermission($_SESSION['user_id'], 'UPDATE')): ?>disabled<?php endif; ?>
+                                <?php if (!Users::can('UPDATE')): ?>disabled<?php endif; ?>
                                 class="mt-1 block w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500
-                                <?php if (!Users::hasPermission($_SESSION['user_id'], 'UPDATE')): ?> bg-gray-100<?php endif; ?>">
+                                <?php if (!Users::can('UPDATE')): ?> bg-gray-100<?php endif; ?>">
                                 <option value="">Select a role</option>
                                 <template x-for="role in roles">
                                     <option :value="role.role_name" 
@@ -120,9 +120,9 @@ if (!$user) {
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Salary</label>
                         <input type="number" x-model="profile.salary" step="0.01"
-                            <?php if (!Users::hasPermission($_SESSION['user_id'], 'UPDATE')): ?>readonly<?php endif; ?>
+                            <?php if (!Users::can('UPDATE')): ?>readonly<?php endif; ?>
                             class="mt-1 block w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500
-                            <?php if (!Users::hasPermission($_SESSION['user_id'], 'UPDATE')): ?> bg-gray-100<?php endif; ?>">
+                            <?php if (!Users::can('UPDATE')): ?> bg-gray-100<?php endif; ?>">
                     </div>
                 </div>
             </div>

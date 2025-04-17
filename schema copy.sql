@@ -59,7 +59,6 @@ CREATE TABLE user_metadata (
     UNIQUE KEY user_meta_key (user_id, meta_key)
 );
 
-
 -- attachments
 CREATE TABLE attachments (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -82,7 +81,6 @@ CREATE TABLE activity_logs (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
-
 -- Incomes table
 CREATE TABLE incomes (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -98,6 +96,7 @@ CREATE TABLE incomes (
     notes TEXT,
     attachment_id INT,
     status ENUM('pending', 'approved', 'denied', 'deleted') DEFAULT 'pending',
+    date_realized TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Adding date_realized field
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     date_approved TIMESTAMP NULL,  -- Adding date_approved field
@@ -122,6 +121,7 @@ CREATE TABLE expenses (
     notes TEXT,
     attachment_id INT,
     status ENUM('pending', 'approved', 'denied', 'deleted') DEFAULT 'pending',
+    date_realized TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Adding date_realized field
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     date_approved TIMESTAMP NULL,
@@ -130,6 +130,87 @@ CREATE TABLE expenses (
     FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE SET NULL
 );
 
+
+CREATE TABLE salaries (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    month VARCHAR(20) NOT NULL,
+    basic_salary DECIMAL(10, 2) NOT NULL,
+    allowances DECIMAL(10, 2) DEFAULT 0.00,
+    deductions DECIMAL(10, 2) DEFAULT 0.00,
+    net_salary DECIMAL(10, 2) NOT NULL,
+    payment_details TEXT,
+    approved_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+-- Add index for salary lookups
+ALTER TABLE salaries ADD INDEX idx_user_salary (user_id, created_at);
+
+CREATE TABLE income_projections (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    entry_by INT,
+    income_from VARCHAR(255) NOT NULL,
+    category VARCHAR(100),
+    amount DECIMAL(10,2) NOT NULL,
+    notes TEXT,
+    date_realized TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Adding date_realized field
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (entry_by) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+CREATE TABLE expense_projections (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    entry_by INT,
+    expense_by VARCHAR(255) NOT NULL,
+    category VARCHAR(100),
+    purpose TEXT,
+    amount DECIMAL(10,2) NOT NULL,
+    notes TEXT,
+    date_realized TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Adding date_realized field
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (entry_by) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+CREATE TABLE bw_vendors (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    vendor_name VARCHAR(255) NOT NULL UNIQUE,
+    contact_person VARCHAR(100),
+    phone_number VARCHAR(20),
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE bw_bills (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    vendor_id INT,
+    bill_number VARCHAR(100) NOT NULL UNIQUE,
+    bill_month VARCHAR(20) NOT NULL,
+    bill_month_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    amount DECIMAL(10,2) NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (vendor_id) REFERENCES bw_vendors(id) ON DELETE SET NULL
+);
+
+CREATE TABLE bw_metadata (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    bill_id INT, -- Added to associate metadata with a specific bill
+    type VARCHAR(255) NOT NULL, -- Changed to store the type of bandwidth
+    quantity DECIMAL(10,2) NOT NULL, -- Added to store quantity
+    unit_price DECIMAL(10,2) NOT NULL, -- Added to store unit price
+    total DECIMAL(10,2) NOT NULL, -- Added to store the total for the item
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (bill_id) REFERENCES bw_bills(id) ON DELETE CASCADE
+);
 
 
 -- Insert dummy data into roles table
@@ -283,6 +364,25 @@ INSERT INTO `activity_logs` (`user_id`,`action_type`, `action_description`, `ip_
 
 
 
+-- Insert dummy data into bw_vendors table
+-- Insert dummy data into bw_vendors table
+INSERT INTO bw_vendors (vendor_name, contact_person, phone_number, address) VALUES
+('Bandwidth Provider A', 'John Smith', '+1-555-0123', '123 Network Street, Tech City, TC 12345'),
+('Internet Solutions B', 'Mary Johnson', '+1-555-0124', '456 Fiber Avenue, Data Town, DT 67890'),
+('Network Corp C', 'Robert Wilson', '+1-555-0125', '789 Bandwidth Road, Connect City, CC 34567'),
+('Digital Links D', 'Sarah Brown', '+1-555-0126', '321 Internet Lane, Web Valley, WV 89012'),
+('Cloud Connect E', 'Michael Davis', '+1-555-0127', '654 Cloud Street, Net City, NC 45678'),
+('vendor 1', '', '', ''),
+('vendor 2', '', '', ''),
+('vendor 3', '', '', ''),
+('vendor 4', '', '', ''),
+('vendor 5', '', '', ''),
+('IMF', 'Reptile', '', ''),
+('Test Vendor', 'Chan mia', '', '');
+
+
+
+
 -- Insert dummy data into incomes table
 INSERT INTO incomes (entry_by, approved_by, income_from, category, amount, method, bank, account_number, transaction_number, notes, status, date_approved) VALUES
 (3, 2, 'Client A', 'Consulting', 1500.00, 'Bank Transfer', 'Bank A', '123456789', 'TXN12345', 'Consulting services', 'approved', '2023-01-15 10:00:00'),
@@ -294,6 +394,9 @@ INSERT INTO expenses (entry_by, approved_by, expense_by, category, purpose, amou
 (3, 2, 'Vendor A', 'Office Supplies', 'Purchase of office supplies', 300.00, 'Bank Transfer', 'Bank A', '123456789', 'TXN12345', 'Office supplies purchase', 'approved', '2023-01-15 10:00:00'),
 (4, 2, 'Vendor B', 'Travel', 'Business trip expenses', 800.00, 'Credit Card', 'Bank B', '987654321', 'TXN54321', 'Travel expenses', 'approved', '2023-02-20 14:30:00'),
 (5, 1, 'Vendor C', 'Marketing', 'Marketing campaign', 1500.00, 'PayPal', 'Bank C', '456789123', 'TXN67890', 'Marketing campaign expenses', 'approved', '2023-03-10 09:45:00');
+
+
+
 -- Insert random data into incomes table
 INSERT INTO incomes (entry_by, approved_by, income_from, category, amount, method, bank, account_number, transaction_number, notes, status, date_approved)
 SELECT 
@@ -354,3 +457,36 @@ SELECT
     NOW()  -- Current timestamp for date_approved
 FROM 
     (SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14 UNION SELECT 15 UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19 UNION SELECT 20 UNION SELECT 21 UNION SELECT 22 UNION SELECT 23 UNION SELECT 24 UNION SELECT 25 UNION SELECT 26 UNION SELECT 27 UNION SELECT 28 UNION SELECT 29 UNION SELECT 30 UNION SELECT 31 UNION SELECT 32 UNION SELECT 33 UNION SELECT 34 UNION SELECT 35 UNION SELECT 36 UNION SELECT 37 UNION SELECT 38 UNION SELECT 39 UNION SELECT 40 UNION SELECT 41 UNION SELECT 42 UNION SELECT 43 UNION SELECT 44 UNION SELECT 45 UNION SELECT 46 UNION SELECT 47 UNION SELECT 48 UNION SELECT 49 UNION SELECT 50 UNION SELECT 51 UNION SELECT 52 UNION SELECT 53 UNION SELECT 54 UNION SELECT 55 UNION SELECT 56 UNION SELECT 57 UNION SELECT 58 UNION SELECT 59 UNION SELECT 60 UNION SELECT 61 UNION SELECT 62 UNION SELECT 63 UNION SELECT 64 UNION SELECT 65 UNION SELECT 66 UNION SELECT 67 UNION SELECT 68 UNION SELECT 69 UNION SELECT 70 UNION SELECT 71 UNION SELECT 72 UNION SELECT 73 UNION SELECT 74 UNION SELECT 75 UNION SELECT 76 UNION SELECT 77 UNION SELECT 78 UNION SELECT 79 UNION SELECT 80 UNION SELECT 81 UNION SELECT 82 UNION SELECT 83 UNION SELECT 84 UNION SELECT 85 UNION SELECT 86 UNION SELECT 87 UNION SELECT 88 UNION SELECT 89 UNION SELECT 90 UNION SELECT 91 UNION SELECT 92 UNION SELECT 93 UNION SELECT 94 UNION SELECT 95 UNION SELECT 96 UNION SELECT 97 UNION SELECT 98 UNION SELECT 99 UNION SELECT 100) AS tmp;
+
+
+
+-- Insert random data into income_projections table
+INSERT INTO income_projections (entry_by, income_from, category, amount, notes)
+SELECT 
+    FLOOR(1 + (RAND() * 100)),  -- Random entry_by
+    CONCAT('Client ', CHAR(FLOOR(65 + (RAND() * 26)))),  -- Random income_from
+    CASE FLOOR(1 + (RAND() * 3))
+        WHEN 1 THEN 'Consulting'
+        WHEN 2 THEN 'Sales'
+        ELSE 'Freelance'
+    END,  -- Random category
+    ROUND(RAND() * 5000, 2),  -- Random amount
+    'Random income note'  -- Random notes
+FROM
+    (SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14 UNION SELECT 15 UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19 UNION SELECT 20 UNION SELECT 21 UNION SELECT 22 UNION SELECT 23 UNION SELECT 24 UNION SELECT 25 UNION SELECT 26 UNION SELECT 27 UNION SELECT 28 UNION SELECT 29 UNION SELECT 30) AS tmp;
+
+-- Insert random data into expense_projections table
+INSERT INTO expense_projections (entry_by, expense_by, category, purpose, amount, notes)
+SELECT 
+    FLOOR(1 + (RAND() * 100)),  -- Random entry_by
+    CONCAT('Vendor ', CHAR(FLOOR(65 + (RAND() * 26)))),  -- Random expense_by
+    CASE FLOOR(1 + (RAND() * 3))
+        WHEN 1 THEN 'Office Supplies'
+        WHEN 2 THEN 'Travel'
+        ELSE 'Marketing'
+    END,  -- Random category
+    'Random purpose',  -- Random purpose
+    ROUND(RAND() * 5000, 2),  -- Random amount
+    'Random expense note'  -- Random notes
+FROM
+    (SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14 UNION SELECT 15 UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19 UNION SELECT 20 UNION SELECT 21 UNION SELECT 22 UNION SELECT 23 UNION SELECT 24 UNION SELECT 25 UNION SELECT 26 UNION SELECT 27 UNION SELECT 28 UNION SELECT 29 UNION SELECT 30) AS tmp;

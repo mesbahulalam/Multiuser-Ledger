@@ -1,7 +1,6 @@
-<h1 class="text-3xl font-bold mb-8">Accounting</h1>
-        
-        <?php if(!Users::hasPermission($_SESSION['user_id'], 'WRITE')): ?>
-    
+        <h1 class="text-3xl font-bold mb-8">Accounting</h1>
+
+
         <!-- Forms Row -->
         <div class="grid md:grid-cols-2 gap-6 mb-8">
             <!-- Income Form -->
@@ -98,6 +97,13 @@
                                         </template>
                                     </ul>
                                 </div>
+                            </div>
+
+                            <div class="flex items-center space-x-2 mb-4">
+                                <input type="datetime-local" name="date_realized" id="income_date_realized" placeholder="Date Realized" class="w-full p-2 border rounded">
+                                <button type="button" class="bg-blue-500 text-white p-2 rounded" @click="document.querySelector('#income_date_realized').value = new Date(new Date().getTime() + 6 * 60 * 60 * 1000).toISOString().slice(0, 16)">
+                                    Now
+                                </button>
                             </div>
 
                             <input type="number" step="0.01" name="amount" placeholder="Amount" class="w-full p-2 mb-4 border rounded">
@@ -249,7 +255,7 @@
                         const formData = new FormData(this.$el);
                         const data = Object.fromEntries(formData);
                         
-                        <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
+                        <?php if(Users::can('APPROVE')): ?>
                         // Add the selected user's id if available
                         if (this.$refs.userAutocomplete && this.$refs.userAutocomplete.__x.$data.selected) {
                             data.expense_by = this.$refs.userAutocomplete.__x.$data.selected.id;
@@ -297,7 +303,7 @@
                         <input type="text" readonly value="<?= FinanceManager::getNextExpenseId() ?>" 
                             class="w-full p-2 border rounded bg-gray-100" placeholder="ID">
                         <!-- User Autocomplete -->
-                        <?php if(Users::hasPermission($_SESSION['user_id'], 'APPROVE')): ?>
+                        <?php if(Users::can('APPROVE')): ?>
                             <!-- User Autocomplete - only shown to users with APPROVE permission -->
                             <div x-data="autocomplete({
                                 apiUrl: '/api/users/namelist',
@@ -443,6 +449,13 @@
                                 </div>
                             </div>
 
+                            <div class="flex items-center space-x-2 mb-4">
+                                <input type="datetime-local" name="date_realized" id="expense_date_realized" placeholder="Date Realized" class="w-full p-2 border rounded">
+                                <button type="button" class="bg-blue-500 text-white p-2 rounded" @click="document.querySelector('#expense_date_realized').value = new Date(new Date().getTime() + 6 * 60 * 60 * 1000).toISOString().slice(0, 16)">
+                                    Now
+                                </button>
+                            </div>
+
                             <input type="number" step="0.01" name="amount" placeholder="Amount" class="w-full p-2 mb-4 border rounded">
                             
                             <!-- Account and Transaction Number (Expense Form) -->
@@ -516,6 +529,5 @@
             </div>
 
         </div>
-    
-        <?php endif; ?>
+
         <?php include 'views/accounting-tables.php'; ?>
